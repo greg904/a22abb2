@@ -1,0 +1,9 @@
+# Rust & Cargo
+/impl/target/
+/impl/**/*.rs.bk
+
+# Visual Studio
+/.vs/
+/build/
+/uwp/Generated Files/
+/packages/

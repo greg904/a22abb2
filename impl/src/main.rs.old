@@ -1,0 +1,19 @@
+extern crate calculator;
+
+use std::env;
+
+use calculator::lexer::Lexer;
+use calculator::parser::Parser;
+
+fn main() {
+    let expr = env::args().skip(1).collect::<Vec<_>>().join(" ");
+
+    let lexer = Lexer::new(&expr);
+    let tokens = lexer.map(|r| r.unwrap()).collect::<Vec<_>>();
+
+    let parser = Parser::new(&tokens);
+    let root_node = parser.parse().unwrap();
+    let eval = root_node/* .deep_reduce() */.eval();
+
+    println!("{:#}", eval);
+}

@@ -1,0 +1,18 @@
+[package]
+name = "calculator-impl"
+version = "0.4.0"
+authors = ["Greg Depoire--Ferrer <greg.depoire@gmail.com>"]
+description = "A calculator library"
+keywords = ["number", "calculator"]
+license = "MIT"
+
+[lib]
+name = "calculator_impl"
+crate-type = ["staticlib"]
+
+[dependencies]
+num-bigint = "0.2.1"
+num-rational = "0.2.1"
+num-traits = "0.2.6"
+num-integer = "0.1.39"
+either = "1.5.0"
