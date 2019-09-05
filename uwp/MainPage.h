@@ -2,6 +2,9 @@
 
 #include "MainPage.g.h"
 
+#include <optional>
+#include <mutex>
+
 namespace winrt::Calculator::implementation
 {
     struct MainPage : MainPageT<MainPage>
@@ -9,6 +12,12 @@ namespace winrt::Calculator::implementation
         MainPage();
 
         void InputChangedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::TextChangedEventArgs const& args);
+
+    private:
+        Windows::Foundation::IAsyncAction _evalThread;
+
+        std::mutex _evalQueueMutex;
+        std::optional<winrt::hstring> _evalQueue;
     };
 }
 

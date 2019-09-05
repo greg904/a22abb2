@@ -15,7 +15,7 @@ extern "C"
     EvalResult calculator_eval(const char* expr);
 
     // fix Rust for UWP
-    BOOL GetUserProfileDirectoryW(HANDLE _hToken, LPWSTR _lpProfileDir, LPDWORD _lpcchSize)
+    BOOL GetUserProfileDirectoryW(HANDLE, LPWSTR, LPDWORD)
     {
         return FALSE;
     }
