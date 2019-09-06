@@ -13,7 +13,6 @@ mod result;
 
 pub use result::EvalResult;
 
-use std::{thread, time};
 use std::os::raw::c_char;
 use std::ffi::CStr;
 
@@ -25,9 +24,6 @@ pub struct FloatResult {
 
 #[no_mangle]
 pub unsafe extern fn calculator_eval(expr: *const c_char) -> FloatResult {
-    // to test if this is running on the UI thread
-    thread::sleep(time::Duration::from_secs(1));
-
     let expr = match CStr::from_ptr(expr).to_str() {
         Ok(val) => val,
         Err(_) => return FloatResult { val: 0f64, success: false },

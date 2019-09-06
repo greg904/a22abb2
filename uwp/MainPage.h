@@ -14,6 +14,11 @@ namespace winrt::Calculator::implementation
         void InputChangedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::TextChangedEventArgs const& args);
 
     private:
+        void _StartEval(winrt::hstring expr);
+        void _EvalThread();
+
+        Windows::System::Threading::ThreadPoolTimer _debounceTimer;
+
         Windows::Foundation::IAsyncAction _evalThread;
 
         std::mutex _evalQueueMutex;
