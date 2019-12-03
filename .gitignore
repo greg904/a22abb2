@@ -1,9 +1,8 @@
 # Rust & Cargo
-/impl/target/
-/impl/**/*.rs.bk
+/a22abb2-ffi/target/
+/a22abb2-ffi/**/*.rs.bk
 
 # Visual Studio
 /.vs/
-/build/
-/uwp/Generated Files/
-/packages/
+/Reluclac/bin/
+/Reluclac/obj/

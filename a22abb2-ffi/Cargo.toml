@@ -1,0 +1,12 @@
+[package]
+name = "a22abb2-ffi"
+version = "0.1.0"
+authors = ["Greg Depoire--Ferrer <greg.depoire@gmail.com>"]
+edition = "2018"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+a22abb2 = { git = "https://github.com/greg904/a22abb2.git" }
