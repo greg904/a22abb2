@@ -80,5 +80,12 @@ namespace Reluclac
                 CurrentCalculation.Reset();
             }
         }
+
+        private void DeleteButton_Click(object sender, RoutedEventArgs e)
+        {
+            var button = (Button)sender;
+            var item = (CalculationViewModel)button.DataContext;
+            History.Remove(item);
+        }
     }
 }
