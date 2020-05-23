@@ -7,7 +7,7 @@
     <CargoParams Condition="'$(Configuration)'!='Debug'">--release</CargoParams>
 
     <!-- Rust target -->
-    <RustTarget Condition="'$(Platform)'=='Win32'">i686-uwp-windows-msvc</RustTarget>
+    <RustTarget Condition="'$(Platform)'=='x86'">i686-uwp-windows-msvc</RustTarget>
     <RustTarget Condition="'$(Platform)'=='x64'">x86_64-uwp-windows-msvc</RustTarget>
     <RustTarget Condition="'$(Platform)'=='ARM64'">aarch64-uwp-windows-msvc</RustTarget>
   </PropertyGroup>
