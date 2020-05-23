@@ -1,6 +1,8 @@
-﻿using System.Collections.ObjectModel;
-using System.Linq;
-using Windows.UI.Xaml;
+﻿using System;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Windows.Input;
+using Windows.System;
 using Windows.UI.Xaml.Controls;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
@@ -12,69 +14,85 @@ namespace A22abb2
     /// </summary>
     public sealed partial class MainPage : Page
     {
-        public ObservableCollection<CalculationViewModel> History { get; set; } = new ObservableCollection<CalculationViewModel>();
-
-        public CalculationViewModel CurrentCalculation { get; } = new CalculationViewModel();
+        public readonly MainViewModel ViewModel = new MainViewModel();
 
         public MainPage()
         {
             this.InitializeComponent();
-
-            CurrentCalculation.PropertyChanged += (sender, e) =>
-            {
-                if (e.PropertyName == "Expression")
-                {
-                    string newResult = null;
-
-                    if (!CurrentCalculation.Expression.All(char.IsWhiteSpace))
-                    {
-                        // TODO: do not call this on the UI thread
-                        var result = A22abb2.Eval(CurrentCalculation.Expression);
-                        if (!double.IsNaN(result))
-                        {
-                            newResult = result.ToString();
-                        }
-                    }
-
-                    CurrentCalculation.Result = newResult;
-                }
-            };
         }
 
-        private void AddHistory_Click(object sender, RoutedEventArgs e)
+        private void ExpressionTextBox_KeyDown(object sender, Windows.UI.Xaml.Input.KeyRoutedEventArgs e)
         {
-            StoreCurrentExpressionInHistory();
-        }
-
-        private void History_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            foreach (var item in e.AddedItems)
+            if (e.Key == VirtualKey.Enter)
             {
-                var modelItem = (CalculationViewModel)item;
-                if (modelItem != null)
+                this.ViewModel.CommitIfValid();
+                e.Handled = true;
+            }
+        }
+    }
+
+    public sealed class MainViewModel : INotifyPropertyChanged
+    {
+        public readonly ObservableCollection<CalculationViewModel> History = new ObservableCollection<CalculationViewModel>();
+
+        private CalculationViewModel currentCalculation = new CalculationViewModel();
+        public CalculationViewModel CurrentCalculation
+        {
+            get => this.currentCalculation;
+            set
+            {
+                if (this.currentCalculation != value)
                 {
-                    // put it back in the current calculation
-                    StoreCurrentExpressionInHistory();
-                    CurrentCalculation.Expression = modelItem.Expression;
-                    History.Remove(modelItem);
+                    this.currentCalculation = value;
+                    this.OnPropertyChanged(nameof(CurrentCalculation));
                 }
             }
         }
 
-        private void StoreCurrentExpressionInHistory()
+        public readonly CommitCommand CommitCommand;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public MainViewModel()
         {
-            if (CurrentCalculation.Result != null)
-            {
-                History.Add((CalculationViewModel)CurrentCalculation.Clone());
-                CurrentCalculation.Reset();
-            }
+            this.CommitCommand = new CommitCommand(this);
+            this.History.Add(this.CurrentCalculation);
         }
 
-        private void DeleteButton_Click(object sender, RoutedEventArgs e)
+        public void CommitIfValid()
         {
-            var button = (Button)sender;
-            var item = (CalculationViewModel)button.DataContext;
-            History.Remove(item);
+            if (double.IsNaN(this.CurrentCalculation.Result))
+            {
+                return;
+            }
+            this.CurrentCalculation = new CalculationViewModel();
+            this.History.Add(this.CurrentCalculation);
+        }
+
+        private void OnPropertyChanged(string name)
+        {
+            this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+    }
+
+    public sealed class CommitCommand : ICommand
+    {
+        public event EventHandler CanExecuteChanged;
+        private readonly MainViewModel viewModel;
+
+        public CommitCommand(MainViewModel viewModel)
+        {
+            this.viewModel = viewModel;
+        }
+
+        public bool CanExecute(object parameter)
+        {
+            return true;
+        }
+
+        public void Execute(object parameter)
+        {
+            this.viewModel.CommitIfValid();
         }
     }
 }

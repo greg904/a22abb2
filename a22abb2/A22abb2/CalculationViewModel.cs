@@ -1,103 +1,59 @@
-﻿using System;
-using System.ComponentModel;
-using Windows.UI.Xaml.Data;
+﻿using System.ComponentModel;
 
 namespace A22abb2
 {
-    public sealed class CalculationViewModel : INotifyPropertyChanged, ICloneable
+    public sealed class CalculationViewModel : INotifyPropertyChanged
     {
-        private string expression;
-        private string result;
+        private string expression = "";
 
-        public string Expression {
-            get => expression;
+        public string Expression
+        {
+            get => this.expression;
             set
             {
-                if (expression != value)
+                if (this.expression != value)
                 {
-                    expression = value;
-                    OnPropertyChanged(nameof(Expression));
-                    OnPropertyChanged(nameof(Line));
+                    this.expression = value;
+                    this.OnPropertyChanged(nameof(Expression));
+
+                    // TODO: do not call this on the UI thread
+                    var newResult = A22abb2.Eval(this.expression.Trim());
+                    if (this.Result != newResult)
+                    {
+                        this.Result = newResult;
+                        this.OnPropertyChanged(nameof(Result));
+                        this.OnPropertyChanged(nameof(ResultText));
+                    }
                 }
             }
         }
 
-        public string Result
+        public double Result { get; private set; } = double.NaN;
+
+        public string ResultText
         {
-            get => result;
-            set
+            get
             {
-                if (result != value)
+                if (string.IsNullOrWhiteSpace(this.expression))
                 {
-                    result = value;
-                    OnPropertyChanged(nameof(Result));
-                    OnPropertyChanged(nameof(Line));
+                    return "";
+                }
+                else if (double.IsNaN(this.Result))
+                {
+                    return "(error)";
+                }
+                else
+                {
+                    return $"= {this.Result}";
                 }
             }
-        }
-
-        public string Line { get => Expression + " = " + Result ?? "(error)"; }
-
-        public CalculationViewModel(string expression, string result)
-        {
-            Expression = expression;
-            Result = result;
-        }
-
-        public CalculationViewModel() : this(string.Empty, null)
-        {
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public void Reset()
-        {
-            Expression = string.Empty;
-            Result = null;
-        }
-
-        public object Clone()
-        {
-            return MemberwiseClone();
-        }
-
         private void OnPropertyChanged(string name)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        }
-    }
-
-    public sealed class PrependEqualsConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, string language)
-        {
-            if (targetType != typeof(string))
-            {
-                return null;
-            }
-
-            if (value == null)
-            {
-                return string.Empty;
-            }
-
-            var valString = value as string;
-            if (valString == null)
-            {
-                return "(error)";
-            }
-
-            if (valString.Length == 0)
-            {
-                return "";
-            }
-
-            return $"= {valString}";
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, string language)
-        {
-            throw new NotImplementedException();
+            this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
     }
 }

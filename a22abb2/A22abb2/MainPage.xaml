@@ -20,8 +20,6 @@
                     <SolidColorBrush x:Key="InputBoxBrush" Color="#444444"/>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
-
-            <local:PrependEqualsConverter x:Key="PrependEqualsConverter" />
         </ResourceDictionary>
     </Page.Resources>
 
@@ -36,25 +34,23 @@
                     Style="{ThemeResource TitleTextBlockStyle}"
                     Margin="14"
                     Grid.Row="0"/>
-        <ListView ItemsSource="{x:Bind History}"
-                  SelectionMode="Single"
-                  SelectionChanged="History_SelectionChanged"
+        <ListView ItemsSource="{x:Bind ViewModel.History}"
+                  SelectionMode="None"
+                  IsItemClickEnabled="False"
                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                   ScrollViewer.VerticalScrollBarVisibility="Auto"
                   Grid.Row="1">
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="local:CalculationViewModel">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-
-                        <TextBlock Grid.Column="0" Text="{x:Bind Line}"/>
-                        <Button Grid.Column="1" Click="DeleteButton_Click">
-                            <SymbolIcon Symbol="Delete"/>
-                        </Button>
-                    </Grid>
+                    <StackPanel Orientation="Vertical" Margin="0,0,14,14">
+                        <TextBlock FontSize="24"
+                                   FontWeight="Bold"
+                                   Text="{x:Bind Expression, Mode=OneWay}"
+                                   HorizontalAlignment="Right" />
+                        <TextBlock FontSize="20"
+                                   Text="{x:Bind ResultText, Mode=OneWay}"
+                                   HorizontalAlignment="Right" />
+                    </StackPanel>
                 </DataTemplate>
             </ListView.ItemTemplate>
             <ListView.ItemContainerStyle>
@@ -62,6 +58,13 @@
                     <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                 </Style>
             </ListView.ItemContainerStyle>
+            <!-- These properties allow the list to grow from the bottom -->
+            <ListView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <ItemsStackPanel ItemsUpdatingScrollMode="KeepLastItemInView" 
+                                     VerticalAlignment="Bottom"/>
+                </ItemsPanelTemplate>
+            </ListView.ItemsPanel>
         </ListView>
 
         <StackPanel Orientation="Vertical"
@@ -75,14 +78,14 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBox Text="{x:Bind CurrentCalculation.Expression, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                         Margin="0,0,8,0"
+                <TextBox Text="{x:Bind ViewModel.CurrentCalculation.Expression, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         KeyDown="ExpressionTextBox_KeyDown"
+                         Margin="0,0,14,0"
                          Grid.Column="0"/>
-                <Button Grid.Column="1" Click="AddHistory_Click">
+                <Button Grid.Column="1" Command="{x:Bind ViewModel.CommitCommand}">
                     <SymbolIcon Symbol="Accept"></SymbolIcon>
                 </Button>
             </Grid>
-            <TextBlock Text="{x:Bind CurrentCalculation.Result, Mode=OneWay, Converter={StaticResource PrependEqualsConverter}}" HorizontalTextAlignment="Right"/>
         </StackPanel>
     </Grid>
 </Page>
