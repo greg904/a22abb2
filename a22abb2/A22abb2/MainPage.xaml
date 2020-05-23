@@ -5,15 +5,43 @@
     xmlns:local="using:A22abb2"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    mc:Ignorable="d">
+
     <Page.Resources>
-        <local:PrependEqualsConverter x:Key="PrependEqualsConverter"/>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="InputBoxBrush" Color="LightGray"/>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="InputBoxBrush" Color="#222222"/>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="HighContrast">
+                    <SolidColorBrush x:Key="InputBoxBrush" Color="#444444"/>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+
+            <local:PrependEqualsConverter x:Key="PrependEqualsConverter" />
+        </ResourceDictionary>
     </Page.Resources>
-    
-    <StackPanel>
-        <TextBlock Text="History" Style="{ThemeResource TitleTextBlockStyle}"/>
-        <ListView ItemsSource="{x:Bind History}" SelectionMode="Single" SelectionChanged="History_SelectionChanged">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="History"
+                    Style="{ThemeResource TitleTextBlockStyle}"
+                    Margin="14"
+                    Grid.Row="0"/>
+        <ListView ItemsSource="{x:Bind History}"
+                  SelectionMode="Single"
+                  SelectionChanged="History_SelectionChanged"
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                  Grid.Row="1">
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="local:CalculationViewModel">
                     <Grid>
@@ -21,8 +49,11 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
+
                         <TextBlock Grid.Column="0" Text="{x:Bind Line}"/>
-                        <Button Grid.Column="1" Click="DeleteButton_Click">X</Button>
+                        <Button Grid.Column="1" Click="DeleteButton_Click">
+                            <SymbolIcon Symbol="Delete"/>
+                        </Button>
                     </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>
@@ -33,15 +64,25 @@
             </ListView.ItemContainerStyle>
         </ListView>
 
-        <TextBlock Text="New calculation" Style="{ThemeResource TitleTextBlockStyle}"/>
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBox Grid.Column="0" Text="{x:Bind CurrentCalculation.Expression, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-            <Button Grid.Column="1" Click="AddHistory_Click">Add to history</Button>
-        </Grid>
-        <TextBlock Text="{x:Bind CurrentCalculation.Result, Mode=OneWay, Converter={StaticResource PrependEqualsConverter}}" HorizontalTextAlignment="Right"/>
-    </StackPanel>
+        <StackPanel Orientation="Vertical"
+                    Background="{ThemeResource InputBoxBrush}"
+                    Padding="14"
+                    Spacing="14"
+                    Grid.Row="2">
+            <TextBlock Text="New calculation" Style="{ThemeResource TitleTextBlockStyle}"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Text="{x:Bind CurrentCalculation.Expression, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         Margin="0,0,8,0"
+                         Grid.Column="0"/>
+                <Button Grid.Column="1" Click="AddHistory_Click">
+                    <SymbolIcon Symbol="Accept"></SymbolIcon>
+                </Button>
+            </Grid>
+            <TextBlock Text="{x:Bind CurrentCalculation.Result, Mode=OneWay, Converter={StaticResource PrependEqualsConverter}}" HorizontalTextAlignment="Right"/>
+        </StackPanel>
+    </Grid>
 </Page>
