@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Windows.UI.Xaml.Data;
 
-namespace Reluclac
+namespace A22abb2
 {
     public sealed class CalculationViewModel : INotifyPropertyChanged, ICloneable
     {

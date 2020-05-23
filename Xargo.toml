@@ -1,0 +1,8 @@
+[target.i686-uwp-windows-msvc.dependencies]
+std = {}
+
+[target.x86_64-uwp-windows-msvc.dependencies]
+std = {}
+
+[target.aarch64-uwp-windows-msvc.dependencies]
+std = {}

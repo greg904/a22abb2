@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Reluclac
+namespace A22abb2
 {
     class A22abb2
     {

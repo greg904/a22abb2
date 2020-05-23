@@ -9,13 +9,13 @@
   <Identity
     Name="686d6d01-8a1e-4989-9271-6b87f447a440"
     Publisher="CN=gregd"
-    Version="1.0.0.0" />
+    Version="0.1.0.0" />
 
   <mp:PhoneIdentity PhoneProductId="686d6d01-8a1e-4989-9271-6b87f447a440" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
-    <DisplayName>Reluclac</DisplayName>
-    <PublisherDisplayName>gregd</PublisherDisplayName>
+    <DisplayName>A22abb2</DisplayName>
+    <PublisherDisplayName>greg904</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
@@ -30,13 +30,12 @@
   <Applications>
     <Application Id="App"
       Executable="$targetnametoken$.exe"
-      EntryPoint="Reluclac.App">
+      EntryPoint="A22abb2.App">
       <uap:VisualElements
-        DisplayName="Reluclac"
+        DisplayName="A22abb2"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png"
-        Description="Reluclac"
-        BackgroundColor="transparent">
+        BackgroundColor="transparent" Description="An application to do computations.">
         <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png"/>
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
       </uap:VisualElements>

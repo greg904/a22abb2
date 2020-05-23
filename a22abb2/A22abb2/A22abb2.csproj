@@ -7,8 +7,8 @@
     <ProjectGuid>{51A585F2-7481-40DF-82A9-F208CE038703}</ProjectGuid>
     <OutputType>AppContainerExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Reluclac</RootNamespace>
-    <AssemblyName>Reluclac</AssemblyName>
+    <RootNamespace>A22abb2</RootNamespace>
+    <AssemblyName>A22abb2</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
     <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.18362.0</TargetPlatformVersion>
@@ -115,6 +115,12 @@
   <PropertyGroup>
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
   </PropertyGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="PropertySheet.props" />
+  </ImportGroup>
+  <PropertyGroup>
+    <PreBuildEvent>cd $(SolutionDir)..\a22abb2-ffi &amp;&amp; xargo build --target=$(RustTarget) $(CargoParams)</PreBuildEvent>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="A22abb2.cs" />
     <Compile Include="App.xaml.cs">
@@ -132,7 +138,8 @@
     </AppxManifest>
   </ItemGroup>
   <ItemGroup>
-    <Content Condition="'$(Configuration)' == 'Debug'" Include="$(SolutionDir)a22abb2-ffi\target\debug\a22abb2_ffi.dll" />
+    <Content Condition="'$(Configuration)' == 'Debug'" Include="$(SolutionDir)..\target\$(RustTarget)\debug\a22abb2_ffi.dll" />
+    <Content Condition="'$(Configuration)' == 'Release'" Include="$(SolutionDir)..\target\$(RustTarget)\release\a22abb2_ffi.dll" />
     <Content Include="Properties\Default.rd.xml" />
     <Content Include="Assets\LockScreenLogo.scale-200.png" />
     <Content Include="Assets\SplashScreen.scale-200.png" />
@@ -157,6 +164,9 @@
       <Version>6.2.9</Version>
     </PackageReference>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="PropertySheet.props" />
+  </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>
@@ -168,4 +178,12 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <Target Name="EnsureNotArm32" BeforeTargets="PrepareForBuild">
+    <!--
+    I don't know much about Rust targets. I tried to install
+    "thumbv7a-pc-windows-msvc" but it failed to I'm assuming that the
+    support is not there yet.
+    -->
+    <Error Text="No support for ARM32 yet!" Condition="'$(Platform)'=='ARM'" />
+  </Target>
 </Project>

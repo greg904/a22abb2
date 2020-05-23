@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29519.87
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Reluclac", "Reluclac\Reluclac.csproj", "{51A585F2-7481-40DF-82A9-F208CE038703}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "A22abb2", "A22abb2\A22abb2.csproj", "{51A585F2-7481-40DF-82A9-F208CE038703}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
