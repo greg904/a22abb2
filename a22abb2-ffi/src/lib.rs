@@ -43,7 +43,7 @@ unsafe fn alloc_csharp_str(byte_count: usize) -> *mut c_char {
 }
 
 #[cfg(not(windows))]
-unsafe fn alloc_csharp_str(byte_count: usize) -> *mut c_char {
+unsafe fn alloc_csharp_str(_byte_count: usize) -> *mut c_char {
     panic!("Unsupported platform");
 }
 
