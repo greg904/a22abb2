@@ -14,7 +14,7 @@ use a22abb2_core::parser::Parser;
 
 pub struct EvalSuccess {
     expr_simplified: String,
-    result_val: f64,
+    approx: f64,
 }
 
 type EvalResult = Result<EvalSuccess, ()>;
@@ -34,9 +34,9 @@ pub unsafe extern fn a22abb2_evalresult_has_failed(r: *mut EvalResult) -> bool {
 }
 
 #[no_mangle]
-pub unsafe extern fn a22abb2_evalresult_get_result_val(r: *mut EvalResult) -> f64 {
+pub unsafe extern fn a22abb2_evalresult_get_approx(r: *mut EvalResult) -> f64 {
     match &*r {
-        Ok(success) => success.result_val,
+        Ok(success) => success.approx,
         Err(_) => f64::NAN,
     }
 }
@@ -88,11 +88,11 @@ pub unsafe extern fn a22abb2_eval(expr: *const c_char) -> *mut EvalResult {
     };
     let reduced = root_node.deep_reduce();
     let reduced_str = reduced.to_string();
-    let result_val = reduced.eval().val;
+    let approx = reduced.eval().val;
 
     let r = EvalSuccess {
         expr_simplified: reduced_str,
-        result_val,
+        approx,
     };
     Box::into_raw(Box::new(Ok(r)))
 }

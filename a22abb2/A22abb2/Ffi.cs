@@ -11,8 +11,8 @@ namespace A22abb2
         [DllImport("a22abb2_ffi.dll", EntryPoint = "a22abb2_evalresult_has_failed")]
         private static extern bool Native_EvalResult_HasFailed(IntPtr ptr);
 
-        [DllImport("a22abb2_ffi.dll", EntryPoint = "a22abb2_evalresult_get_result_val")]
-        private static extern double Native_EvalResult_GetResultVal(IntPtr ptr);
+        [DllImport("a22abb2_ffi.dll", EntryPoint = "a22abb2_evalresult_get_approx")]
+        private static extern double Native_EvalResult_GetApprox(IntPtr ptr);
 
         [DllImport("a22abb2_ffi.dll", EntryPoint = "a22abb2_evalresult_get_expr_simplified", CharSet = CharSet.Ansi)]
         private static extern string Native_EvalResult_GetExprSimplified(IntPtr ptr);
@@ -22,7 +22,7 @@ namespace A22abb2
 
         public struct EvalResult
         {
-            public double ResultValue;
+            public double Approximation;
             public string SimplifiedExpression;
 
             public bool HasFailed
@@ -32,7 +32,7 @@ namespace A22abb2
 
             public EvalResult(double resultValue, string simplifiedExpression)
             {
-                this.ResultValue = resultValue;
+                this.Approximation = resultValue;
                 this.SimplifiedExpression = simplifiedExpression;
             }
         }
@@ -50,9 +50,9 @@ namespace A22abb2
                 else
                 {
                     // success
-                    var resultVal = Native_EvalResult_GetResultVal(ptr);
+                    var approx = Native_EvalResult_GetApprox(ptr);
                     var simplified = Native_EvalResult_GetExprSimplified(ptr);
-                    return new EvalResult(resultVal, simplified);
+                    return new EvalResult(approx, simplified);
                 }
             }
             finally

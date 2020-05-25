@@ -42,16 +42,20 @@
                   Grid.Row="1">
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="local:CalculationViewModel">
-                    <StackPanel Orientation="Vertical" Margin="0,0,14,14">
+                    <StackPanel Orientation="Vertical"
+                                Visibility="{x:Bind HistoryVisibility, Mode=OneWay}"
+                                Margin="0,0,14,14">
                         <TextBlock FontSize="24"
                                    FontWeight="Bold"
-                                   Text="{x:Bind ExpressionText, Mode=OneWay}"
+                                   Text="{x:Bind Expression, Mode=OneWay}"
                                    HorizontalAlignment="Right" />
                         <TextBlock FontSize="20"
                                    Text="{x:Bind SimplifiedExpression, Mode=OneWay}"
+                                   Visibility="{x:Bind SimplificationVisibility, Mode=OneWay}"
                                    HorizontalAlignment="Right" />
                         <TextBlock FontSize="20"
-                                   Text="{x:Bind ResultValue, Mode=OneWay}"
+                                   Text="{x:Bind Approximation, Mode=OneWay}"
+                                   Visibility="{x:Bind ApproximationVisibility, Mode=OneWay}"
                                    HorizontalAlignment="Right" />
                     </StackPanel>
                 </DataTemplate>

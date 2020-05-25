@@ -1,10 +1,22 @@
 ﻿using System.ComponentModel;
+using System.Text.RegularExpressions;
+using Windows.UI.Xaml;
 
 namespace A22abb2
 {
     public sealed class CalculationViewModel : INotifyPropertyChanged
     {
+        private static Regex WhitespaceRegex = new Regex(@"\s+");
+
         private string expression = "";
+
+        private Ffi.EvalResult result;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public Visibility HistoryVisibility { get; private set; } = Visibility.Collapsed;
+        public Visibility SimplificationVisibility { get; private set; } = Visibility.Collapsed;
+        public Visibility ApproximationVisibility { get; private set; } = Visibility.Collapsed;
 
         public string Expression
         {
@@ -15,7 +27,6 @@ namespace A22abb2
                 {
                     this.expression = value;
                     this.OnPropertyChanged(nameof(Expression));
-                    this.OnPropertyChanged(nameof(ExpressionText));
 
                     // TODO: do not call this on the UI thread
                     var newResult = Ffi.Eval(this.expression.Trim());
@@ -23,55 +34,67 @@ namespace A22abb2
                     {
                         this.result = newResult;
                         this.OnPropertyChanged(nameof(HasFailed));
-                        this.OnPropertyChanged(nameof(ResultValue));
+                        this.OnPropertyChanged(nameof(Approximation));
                         this.OnPropertyChanged(nameof(SimplifiedExpression));
+                    }
+
+                    var original = WhitespaceRegex.Replace(this.Expression, ""); ;
+                    var simplified = this.result.SimplifiedExpression == null ?
+                        null : WhitespaceRegex.Replace(this.result.SimplifiedExpression, "");
+                    var approx = this.result.HasFailed ? null : this.result.Approximation.ToString();
+
+                    bool simplVisible;
+                    bool approxVisible;
+                    if (original == "")
+                    {
+                        simplVisible = false;
+                        approxVisible = false;
+                    }
+                    else
+                    {
+                        // only show if there actually was a simplification
+                        simplVisible = !original.Equals(simplified);
+                        // only show if there actually was a calculation
+                        approxVisible = approx != null && !approx.Equals(simplified);
+                    }
+
+                    var historyVisible = simplVisible || approxVisible;
+                    var visibility1 = historyVisible ? Visibility.Visible : Visibility.Collapsed;
+                    if (this.HistoryVisibility != visibility1)
+                    {
+                        this.HistoryVisibility = visibility1;
+                        this.OnPropertyChanged(nameof(HistoryVisibility));
+                    }
+                    var visibility2 = simplVisible ? Visibility.Visible : Visibility.Collapsed;
+                    if (this.SimplificationVisibility != visibility2)
+                    {
+                        this.SimplificationVisibility = visibility2;
+                        this.OnPropertyChanged(nameof(SimplificationVisibility));
+                    }
+                    var visibility3 = approxVisible ? Visibility.Visible : Visibility.Collapsed;
+                    if (this.ApproximationVisibility != visibility3)
+                    {
+                        this.ApproximationVisibility = visibility3;
+                        this.OnPropertyChanged(nameof(ApproximationVisibility));
                     }
                 }
             }
         }
-
-        private bool expressionIsEmpty
-        {
-            get => string.IsNullOrWhiteSpace(this.expression);
-        }
-
-        public string ExpressionText
-        {
-            get => this.expressionIsEmpty ? "(empty)" : this.expression;
-        }
-
-        private Ffi.EvalResult result;
 
         public bool HasFailed
         {
             get => this.result.HasFailed;
         }
 
-        public string ResultValue
+        public string Approximation
         {
-            get => this.result.HasFailed ? "" : $"≈ {this.result.ResultValue}";
+            get => this.result.HasFailed ? "(error)" : $"≈ {this.result.Approximation}";
         }
 
         public string SimplifiedExpression
         {
-            get
-            {
-                if (this.expressionIsEmpty)
-                {
-                    return "(empty)";
-                }
-                else if (result.SimplifiedExpression == null)
-                {
-                    return "(error)";
-                }
-                else
-                {
-                    return $"= {this.result.SimplifiedExpression}";
-                }
-            }
+            get => this.result.SimplifiedExpression == null ? "" : $"= {this.result.SimplifiedExpression}";
         }
-
-        public event PropertyChangedEventHandler PropertyChanged;
 
         private void OnPropertyChanged(string name)
         {
