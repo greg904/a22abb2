@@ -48,7 +48,10 @@
                                    Text="{x:Bind ExpressionText, Mode=OneWay}"
                                    HorizontalAlignment="Right" />
                         <TextBlock FontSize="20"
-                                   Text="{x:Bind ResultText, Mode=OneWay}"
+                                   Text="{x:Bind SimplifiedExpression, Mode=OneWay}"
+                                   HorizontalAlignment="Right" />
+                        <TextBlock FontSize="20"
+                                   Text="{x:Bind ResultValue, Mode=OneWay}"
                                    HorizontalAlignment="Right" />
                     </StackPanel>
                 </DataTemplate>

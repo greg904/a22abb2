@@ -3,6 +3,7 @@ use super::EvalResult;
 
 use std::collections::HashMap;
 use std::f64::consts::{E, PI};
+use std::fmt;
 use std::iter;
 use std::ops::{Add, Mul};
 
@@ -388,5 +389,38 @@ impl Node {
 
     pub fn opposite(inner: Node) -> Node {
         Node::mul(Node::minus_one(), inner)
+    }
+}
+
+impl fmt::Display for Node {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Node::Const(kind) => match kind {
+                ConstKind::Pi => write!(f, "pi"),
+                ConstKind::Tau => write!(f, "tau"),
+                ConstKind::E => write!(f, "e"),
+            },
+            // TODO: print in correct base
+            Node::Num { val, input_base: _ } => write!(f, "{}", val),
+
+            Node::Inverse(inner) => write!(f, "1/{}", inner),
+            Node::VarOp { kind, children } => {
+                let mut first = true;
+                for c in children {
+                    if first {
+                        first = false;
+                    } else {
+                        let op_char = match kind {
+                            VarOpKind::Add => '+',
+                            VarOpKind::Mul => '*',
+                        };
+                        write!(f, " {} ", op_char)?;
+                    }
+                    write!(f, "{}", c)?;
+                }
+                Ok(())
+            },
+            Node::Exp(a, b) => write!(f, "{}^{}", a, b),
+        }
     }
 }

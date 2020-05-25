@@ -130,7 +130,7 @@
     <PreBuildEvent>cd $(SolutionDir)..\a22abb2-ffi &amp;&amp; xargo build --target=$(RustTarget) $(CargoParams)</PreBuildEvent>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="A22abb2.cs" />
+    <Compile Include="Ffi.cs" />
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>

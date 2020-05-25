@@ -61,7 +61,7 @@ namespace A22abb2
 
         public void CommitIfValid()
         {
-            if (double.IsNaN(this.CurrentCalculation.Result))
+            if (this.CurrentCalculation.HasFailed)
             {
                 return;
             }

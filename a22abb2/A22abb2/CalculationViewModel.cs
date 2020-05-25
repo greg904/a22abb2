@@ -16,52 +16,57 @@ namespace A22abb2
                     this.expression = value;
                     this.OnPropertyChanged(nameof(Expression));
                     this.OnPropertyChanged(nameof(ExpressionText));
-                    this.OnPropertyChanged(nameof(IsEmpty));
 
                     // TODO: do not call this on the UI thread
-                    var newResult = A22abb2.Eval(this.expression.Trim());
-                    if (this.Result != newResult)
+                    var newResult = Ffi.Eval(this.expression.Trim());
+                    if (!this.result.Equals(newResult))
                     {
-                        this.Result = newResult;
-                        this.OnPropertyChanged(nameof(Result));
-                        this.OnPropertyChanged(nameof(ResultText));
+                        this.result = newResult;
+                        this.OnPropertyChanged(nameof(HasFailed));
+                        this.OnPropertyChanged(nameof(ResultValue));
+                        this.OnPropertyChanged(nameof(SimplifiedExpression));
                     }
                 }
             }
         }
 
-        public string ExpressionText
-        {
-            get => this.IsEmpty ? "(empty)" : this.expression;
-        }
-
-        public bool IsEmpty
+        private bool expressionIsEmpty
         {
             get => string.IsNullOrWhiteSpace(this.expression);
         }
 
-        public double Result { get; private set; } = double.NaN;
-
-        public bool IsValid
+        public string ExpressionText
         {
-            get => !double.IsNaN(this.Result);
+            get => this.expressionIsEmpty ? "(empty)" : this.expression;
         }
 
-        public string ResultText
+        private Ffi.EvalResult result;
+
+        public bool HasFailed
+        {
+            get => this.result.HasFailed;
+        }
+
+        public string ResultValue
+        {
+            get => this.result.HasFailed ? "" : $"≈ {this.result.ResultValue}";
+        }
+
+        public string SimplifiedExpression
         {
             get
             {
-                if (this.IsEmpty)
+                if (this.expressionIsEmpty)
                 {
                     return "(empty)";
                 }
-                else if (double.IsNaN(this.Result))
+                else if (result.SimplifiedExpression == null)
                 {
                     return "(error)";
                 }
                 else
                 {
-                    return $"= {this.Result}";
+                    return $"= {this.result.SimplifiedExpression}";
                 }
             }
         }
