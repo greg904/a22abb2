@@ -45,7 +45,7 @@
                     <StackPanel Orientation="Vertical" Margin="0,0,14,14">
                         <TextBlock FontSize="24"
                                    FontWeight="Bold"
-                                   Text="{x:Bind Expression, Mode=OneWay}"
+                                   Text="{x:Bind ExpressionText, Mode=OneWay}"
                                    HorizontalAlignment="Right" />
                         <TextBlock FontSize="20"
                                    Text="{x:Bind ResultText, Mode=OneWay}"
