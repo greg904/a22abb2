@@ -4,6 +4,7 @@ use super::EvalResult;
 use std::collections::HashMap;
 use std::f64::consts::{E, PI};
 use std::fmt;
+use std::fmt::{Display, Write};
 use std::iter;
 use std::ops::{Add, Mul};
 
@@ -392,7 +393,53 @@ impl Node {
     }
 }
 
-impl fmt::Display for Node {
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+enum NodePriority {
+    Add,
+    Mul,
+    Exp,
+    Value,
+}
+
+fn get_node_priority(node: &Node) -> NodePriority {
+    match node {
+        Node::Const(_) => NodePriority::Value,
+        Node::Num { val, .. } => {
+            if val.denom().is_one() {
+                NodePriority::Value
+            } else {
+                // it will be displayed as a fraction with a division sign
+                NodePriority::Mul
+            }
+        },
+        Node::Inverse(_) => NodePriority::Mul,
+        Node::VarOp { kind, .. } => match kind {
+            VarOpKind::Add => NodePriority::Add,
+            VarOpKind::Mul => NodePriority::Mul,
+        },
+        Node::Exp(_, _) => NodePriority::Exp,
+    }
+}
+
+fn write_with_paren(f: &mut fmt::Formatter<'_>, node: &Node, curr_prio: NodePriority, right_assoc: bool) -> fmt::Result {
+    let needs_paren = if right_assoc {
+        // pow(1,pow(2,3)) => 1^(2^3)
+        get_node_priority(node) <= curr_prio
+    } else {
+        // mul(1,mul(2,3)) => 1*2*3
+        get_node_priority(node) < curr_prio
+    };
+    if needs_paren {
+        f.write_char('(')?;
+    }
+    node.fmt(f)?;
+    if needs_paren {
+        f.write_char(')')?;
+    }
+    Ok(())
+}
+
+impl Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Node::Const(kind) => match kind {
@@ -403,7 +450,10 @@ impl fmt::Display for Node {
             // TODO: print in correct base
             Node::Num { val, input_base: _ } => write!(f, "{}", val),
 
-            Node::Inverse(inner) => write!(f, "1/{}", inner),
+            Node::Inverse(inner) => {
+                write!(f, "1/")?;
+                write_with_paren(f, inner, get_node_priority(self), false)
+            },
             Node::VarOp { kind, children } => {
                 let mut first = true;
                 for child in children {
@@ -417,18 +467,24 @@ impl fmt::Display for Node {
                         if *kind == VarOpKind::Mul {
                             if let Node::Inverse(x) = child {
                                 // directly output "/ x" instead of "* 1/x"
-                                write!(f, " / {}", x)?;
+                                write!(f, " / ")?;
+                                write_with_paren(f, x, NodePriority::Mul, false)?;
                                 continue;
                             }
                         }
                         
                         write!(f, " {} ", op_char)?;
                     }
-                    write!(f, "{}", child)?;
+                    write_with_paren(f, child, get_node_priority(self), false)?;
                 }
                 Ok(())
             },
-            Node::Exp(a, b) => write!(f, "{}^{}", a, b),
+            Node::Exp(a, b) => {
+                write_with_paren(f, a, NodePriority::Exp, true)?;
+                f.write_char('^')?;
+                write_with_paren(f, b, NodePriority::Exp, true)?;
+                Ok(())
+            },
         }
     }
 }
