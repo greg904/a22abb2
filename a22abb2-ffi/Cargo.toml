@@ -12,5 +12,9 @@ crate-type = ["cdylib"]
 a22abb2-core = { path = "../a22abb2-core" }
 
 [target.'cfg(windows)'.dependencies.winapi]
-version = "0.3.8"
+# The latest released version (0.3.8) does not build successfully for ARM64,
+# but `master` does.
+git = "https://github.com/retep998/winapi-rs.git"
+rev = "8c3190fb0bbf5a5e37c15b8f892d6ea8b9152cb6"
 features = ["combaseapi"]
+default-features = false
