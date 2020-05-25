@@ -11,6 +11,6 @@ crate-type = ["cdylib"]
 [dependencies]
 a22abb2-core = { path = "../a22abb2-core" }
 
-[dependencies.winapi]
+[target.'cfg(windows)'.dependencies.winapi]
 version = "0.3.8"
 features = ["combaseapi"]

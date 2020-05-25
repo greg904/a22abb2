@@ -1,13 +1,9 @@
-extern crate a22abb2_core;
-extern crate winapi;
-
 use std::f64;
 use std::ffi::CStr;
 use std::mem;
 use std::os::raw::c_char;
 use std::ptr;
 use std::slice;
-use winapi::um::combaseapi::CoTaskMemAlloc;
 
 use a22abb2_core::lexer::{Lexer, Token};
 use a22abb2_core::parser::Parser;
@@ -41,6 +37,16 @@ pub unsafe extern fn a22abb2_evalresult_get_approx(r: *mut EvalResult) -> f64 {
     }
 }
 
+#[cfg(windows)]
+unsafe fn alloc_csharp_str(byte_count: usize) -> *mut c_char {
+    winapi::um::combaseapi::CoTaskMemAlloc(byte_count) as *mut c_char
+}
+
+#[cfg(not(windows))]
+unsafe fn alloc_csharp_str(byte_count: usize) -> *mut c_char {
+    panic!("Unsupported platform");
+}
+
 #[no_mangle]
 pub unsafe extern fn a22abb2_evalresult_get_expr_simplified(r: *mut EvalResult) -> *mut c_char {
     match &*r {
@@ -50,7 +56,7 @@ pub unsafe extern fn a22abb2_evalresult_get_expr_simplified(r: *mut EvalResult) 
             // create string for consumption on C# side
             let chars_with_nul = char_count + 1;
             let bytes = chars_with_nul * mem::size_of::<c_char>();
-            let out = slice::from_raw_parts_mut(CoTaskMemAlloc(bytes) as *mut c_char, chars_with_nul);
+            let out = slice::from_raw_parts_mut(alloc_csharp_str(bytes), chars_with_nul);
             
             // fill string
             let mut in_bytes = success.expr_simplified.bytes();
