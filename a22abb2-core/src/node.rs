@@ -406,7 +406,7 @@ impl fmt::Display for Node {
             Node::Inverse(inner) => write!(f, "1/{}", inner),
             Node::VarOp { kind, children } => {
                 let mut first = true;
-                for c in children {
+                for child in children {
                     if first {
                         first = false;
                     } else {
@@ -414,9 +414,17 @@ impl fmt::Display for Node {
                             VarOpKind::Add => '+',
                             VarOpKind::Mul => '*',
                         };
+                        if *kind == VarOpKind::Mul {
+                            if let Node::Inverse(x) = child {
+                                // directly output "/ x" instead of "* 1/x"
+                                write!(f, " / {}", x)?;
+                                continue;
+                            }
+                        }
+                        
                         write!(f, " {} ", op_char)?;
                     }
-                    write!(f, "{}", c)?;
+                    write!(f, "{}", child)?;
                 }
                 Ok(())
             },
