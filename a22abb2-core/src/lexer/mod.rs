@@ -640,7 +640,10 @@ mod tests {
         assert_eq!(
             lexer.next(),
             Some(Ok(Token {
-                kind: TokenKind::Num { val: One::one(), input_base: 10 },
+                kind: TokenKind::Num {
+                    val: One::one(),
+                    input_base: 10
+                },
                 index: 13
             }))
         );

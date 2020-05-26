@@ -1,7 +1,7 @@
 use num_bigint::BigInt;
 use num_integer::Integer;
 use num_rational::BigRational;
-use num_traits::{Signed, ToPrimitive, Zero, One};
+use num_traits::{One, Signed, ToPrimitive, Zero};
 
 use std::{f64, u64};
 
@@ -65,8 +65,8 @@ pub fn ratio_to_f64(num: &BigRational) -> f64 {
                         return f64::MAX;
                     }
 
-                    let will_lose_one = (fraction as u8) & 1u8 == 1u8 ||
-                        (&div & BigInt::one()).to_u8().unwrap() == 1u8;
+                    let will_lose_one = (fraction as u8) & 1u8 == 1u8
+                        || (&div & BigInt::one()).to_u8().unwrap() == 1u8;
 
                     if most_significant_lost_digit_is_one.is_none() {
                         most_significant_lost_digit_is_one = Some(will_lose_one);
@@ -127,7 +127,11 @@ pub fn ratio_to_f64(num: &BigRational) -> f64 {
         // only the mantissa is stored on the floating point number.
         while fraction & (1 << 52) == 0 {
             if exp <= 2 {
-                return if !is_negative { f64::MIN_POSITIVE } else { -f64::MIN_POSITIVE };
+                return if !is_negative {
+                    f64::MIN_POSITIVE
+                } else {
+                    -f64::MIN_POSITIVE
+                };
             }
 
             fraction <<= 1;

@@ -111,7 +111,7 @@ impl Node {
                     val: a.val.powf(b.val),
                     display_base: Node::get_op_result_base(a.display_base, b.display_base),
                 }
-            },
+            }
             Node::Sin(inner) => inner.eval_map(|x| x.sin(), false),
             Node::Cos(inner) => inner.eval_map(|x| x.cos(), false),
             Node::Tan(inner) => inner.eval_map(|x| x.tan(), false),
@@ -141,7 +141,11 @@ impl Node {
         let original = self.eval();
         EvalResult {
             val: f(original.val),
-            display_base: if keep_base { original.display_base } else { None },
+            display_base: if keep_base {
+                original.display_base
+            } else {
+                None
+            },
         }
     }
 
@@ -198,10 +202,7 @@ impl Node {
     }
 
     pub fn sqrt(self) -> Node {
-        Node::Exp(
-            Box::new(self),
-            Box::new(Node::two().inverse()),
-        )
+        Node::Exp(Box::new(self), Box::new(Node::two().inverse()))
     }
 
     pub fn sin(self) -> Node {

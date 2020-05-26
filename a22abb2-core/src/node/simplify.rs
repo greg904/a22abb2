@@ -4,7 +4,7 @@ use num_traits::{One, Signed, Zero};
 use std::collections::HashMap;
 use std::iter;
 
-use super::{Node, VarOpKind, ConstKind};
+use super::{ConstKind, Node, VarOpKind};
 
 pub fn simplify(node: Node) -> Node {
     match node {
@@ -90,7 +90,8 @@ pub fn simplify(node: Node) -> Node {
                             },
                         )),
                     }
-                }).collect::<Vec<_>>();
+                })
+                .collect::<Vec<_>>();
 
             // if there is only one node, return it instead of a list to evaluate
             match compressed_children.len() {
@@ -99,7 +100,10 @@ pub fn simplify(node: Node) -> Node {
                     input_base: None,
                 },
                 1 => compressed_children.into_iter().next().unwrap(),
-                _ => Node::VarOp { kind, children: compressed_children},
+                _ => Node::VarOp {
+                    kind,
+                    children: compressed_children,
+                },
             }
         }
 
@@ -123,7 +127,7 @@ pub fn simplify(node: Node) -> Node {
                     val: BigRational::new(denom, numer),
                     input_base,
                 }
-            },
+            }
             // inverse of inverse = identity
             Node::Inverse(b) => *b,
             // cannot simplify
@@ -173,8 +177,7 @@ pub fn simplify(node: Node) -> Node {
                     };
                 } else if *pi_factor.denom() == 3.into() {
                     // pi/2 < x < 3pi/2
-                    let is_left = *pi_factor.numer() > 1.into() &&
-                        *pi_factor.numer() < 5.into();
+                    let is_left = *pi_factor.numer() > 1.into() && *pi_factor.numer() < 5.into();
                     // 0 < x < pi
                     let is_top = *pi_factor.numer() < 3.into();
 
@@ -189,8 +192,7 @@ pub fn simplify(node: Node) -> Node {
                     };
                 } else if *pi_factor.denom() == 4.into() {
                     // pi/2 < x < 3pi/2
-                    let is_left = *pi_factor.numer() > 2.into() &&
-                        *pi_factor.numer() < 6.into();
+                    let is_left = *pi_factor.numer() > 2.into() && *pi_factor.numer() < 6.into();
                     // 0 < x < pi
                     let is_top = *pi_factor.numer() < 4.into();
 
@@ -205,8 +207,7 @@ pub fn simplify(node: Node) -> Node {
                     };
                 } else if *pi_factor.denom() == 6.into() {
                     // pi/2 < x < 3pi/2
-                    let is_left = *pi_factor.numer() > 3.into() &&
-                        *pi_factor.numer() < 9.into();
+                    let is_left = *pi_factor.numer() > 3.into() && *pi_factor.numer() < 9.into();
                     // 0 < x < pi
                     let is_top = *pi_factor.numer() < 6.into();
 
@@ -219,7 +220,7 @@ pub fn simplify(node: Node) -> Node {
                         Node::Tan(_) if is_top == is_left => -Node::three().sqrt().inverse(),
                         _ => unreachable!(),
                     };
-                } 
+                }
             }
             // failed to simplify with common angle
             match &node {
@@ -240,7 +241,10 @@ fn get_pi_factor(node: &Node) -> Option<BigRational> {
         Node::Const(ConstKind::Pi) => Some(BigRational::from_integer(1.into())),
         Node::Const(ConstKind::Tau) => Some(BigRational::from_integer(2.into())),
         Node::Num { val, .. } => Some(val.clone()),
-        Node::VarOp { children, kind: VarOpKind::Mul } => {
+        Node::VarOp {
+            children,
+            kind: VarOpKind::Mul,
+        } => {
             let mut total_factor: BigRational = One::one();
             let mut has_pi = false;
             for child in children {
@@ -273,7 +277,7 @@ fn get_pi_factor(node: &Node) -> Option<BigRational> {
             } else {
                 None
             }
-        },
+        }
         _ => None,
     }
 }
@@ -343,12 +347,12 @@ fn deep_flatten_children(children: Vec<Node>, op_kind: VarOpKind) -> Vec<Node> {
                     result.push(child);
                     Either::Right(iter::empty())
                 }
-            }).collect::<Vec<_>>();
+            })
+            .collect::<Vec<_>>();
     }
 
     result
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -380,19 +384,24 @@ mod tests {
                 continue;
             }
             let simplified = simplify(node).eval();
-            assert!((simplified.val - ground_truth.val).abs() < 0.001,
+            assert!(
+                (simplified.val - ground_truth.val).abs() < 0.001,
                 "input: {}, output: {}, expected: {}",
-                input, simplified.val, ground_truth.val);
+                input,
+                simplified.val,
+                ground_truth.val
+            );
             assert_eq!(simplified.display_base, ground_truth.display_base);
         }
     }
 
     fn test_trigonometric_functions_on_range(from: i32, to: i32, denom: u32) {
         for n in from..=to {
-            let input = Node::Const(ConstKind::Pi) * Node::Num {
-                val: BigRational::new(n.into(), denom.into()),
-                input_base: Some(16),
-            };
+            let input = Node::Const(ConstKind::Pi)
+                * Node::Num {
+                    val: BigRational::new(n.into(), denom.into()),
+                    input_base: Some(16),
+                };
             test_trigonometric_functions(&input);
         }
     }

@@ -67,9 +67,12 @@ impl<'a> Parser<'a> {
                         IdentKind::Tan => Node::Tan(param),
                         IdentKind::Sqrt => {
                             let one_half = BigRational::new(1.into(), 2.into());
-                            let one_half = Box::new(Node::Num { val: one_half, input_base: None });
+                            let one_half = Box::new(Node::Num {
+                                val: one_half,
+                                input_base: None,
+                            });
                             Node::Exp(param, one_half)
-                        },
+                        }
                         _ => unreachable!(),
                     }
                 }
@@ -112,8 +115,12 @@ impl<'a> Parser<'a> {
         Ok(match token.kind {
             // left associativity
             TokenKind::Plus => left + self.parse_range(&StopPolicy::IfWeakerOrEqual(Power::Add))?,
-            TokenKind::Minus => left - self.parse_range(&StopPolicy::IfWeakerOrEqual(Power::Add))?,
-            TokenKind::Slash => left / self.parse_range(&StopPolicy::IfWeakerOrEqual(Power::Mul))?,
+            TokenKind::Minus => {
+                left - self.parse_range(&StopPolicy::IfWeakerOrEqual(Power::Add))?
+            }
+            TokenKind::Slash => {
+                left / self.parse_range(&StopPolicy::IfWeakerOrEqual(Power::Mul))?
+            }
 
             // right associativity: 1^2^3 is parsed as exp(1, exp(2, 3)), not exp(exp(1, 2), 3)
             TokenKind::Hat => Node::Exp(
@@ -199,25 +206,22 @@ mod tests {
 
     #[test]
     fn it_handles_precedence_correctly_with_functions() {
-        let tokens: Vec<Token> = Lexer::new("sin(cos sqrt(1))")
-            .map(|x| x.unwrap())
-            .collect();
+        let tokens: Vec<Token> = Lexer::new("sin(cos sqrt(1))").map(|x| x.unwrap()).collect();
         let parser = Parser::new(&tokens);
         let root_node = parser.parse().unwrap();
         assert_eq!(
             root_node,
-            Node::Sin(Box::new(
-                Node::Cos(Box::new(
-                    Node::Exp(
-                        Box::new(Node::Num { val: One::one(), input_base: Some(10) }),
-                        // one half
-                        Box::new(Node::Num {
-                            val: BigRational::new(1.into(), 2.into()),
-                            input_base: None
-                        }),
-                    )
-                ))
-            ))
+            Node::Sin(Box::new(Node::Cos(Box::new(Node::Exp(
+                Box::new(Node::Num {
+                    val: One::one(),
+                    input_base: Some(10)
+                }),
+                // one half
+                Box::new(Node::Num {
+                    val: BigRational::new(1.into(), 2.into()),
+                    input_base: None
+                }),
+            )))))
         );
     }
 }
