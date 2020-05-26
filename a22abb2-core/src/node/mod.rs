@@ -309,8 +309,8 @@ impl Display for Node {
                 let input_base = input_base.unwrap_or(10);
                 match input_base {
                     2 if val.is_integer() => write!(f, "{:#b}", val.numer()),
-                    8 => write!(f, "{:#o}", val.numer()),
-                    10 if val.is_integer() => write!(f, "{}", val),
+                    8 if val.is_integer() => write!(f, "{:#o}", val.numer()),
+                    10 => write!(f, "{}", val),
                     16 if val.is_integer() => write!(f, "{:#X}", val.numer()),
                     _ => todo!("print in bases other than 10 for decimal number"),
                 }
