@@ -559,7 +559,7 @@ mod tests {
     }
 
     #[test]
-    fn it_handles_idents() {
+    fn it_handles_constants() {
         let mut lexer = Lexer::new("pi*tau+zzz");
         assert_eq!(
             lexer.next(),
@@ -594,6 +594,68 @@ mod tests {
             Some(Err(LexerError {
                 kind: LexerErrorKind::UnknownIdent("zzz".to_string()),
                 index: 7
+            }))
+        );
+        assert_eq!(lexer.next(), None);
+    }
+
+    #[test]
+    fn it_handles_functions() {
+        let mut lexer = Lexer::new("sin(cos sqrt(1))");
+        assert_eq!(
+            lexer.next(),
+            Some(Ok(Token {
+                kind: TokenKind::Ident(IdentKind::Sin),
+                index: 0
+            }))
+        );
+        assert_eq!(
+            lexer.next(),
+            Some(Ok(Token {
+                kind: TokenKind::OpenParen,
+                index: 3
+            }))
+        );
+        assert_eq!(
+            lexer.next(),
+            Some(Ok(Token {
+                kind: TokenKind::Ident(IdentKind::Cos),
+                index: 4
+            }))
+        );
+        assert_eq!(
+            lexer.next(),
+            Some(Ok(Token {
+                kind: TokenKind::Ident(IdentKind::Sqrt),
+                index: 8
+            }))
+        );
+        assert_eq!(
+            lexer.next(),
+            Some(Ok(Token {
+                kind: TokenKind::OpenParen,
+                index: 12
+            }))
+        );
+        assert_eq!(
+            lexer.next(),
+            Some(Ok(Token {
+                kind: TokenKind::Num { val: One::one(), input_base: 10 },
+                index: 13
+            }))
+        );
+        assert_eq!(
+            lexer.next(),
+            Some(Ok(Token {
+                kind: TokenKind::CloseParen,
+                index: 14
+            }))
+        );
+        assert_eq!(
+            lexer.next(),
+            Some(Ok(Token {
+                kind: TokenKind::CloseParen,
+                index: 15
             }))
         );
         assert_eq!(lexer.next(), None);

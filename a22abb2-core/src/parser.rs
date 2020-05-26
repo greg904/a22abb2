@@ -53,11 +53,27 @@ impl<'a> Parser<'a> {
                     input_base: Some(input_base),
                 }
             }
-            TokenKind::Ident(kind) => Node::Const(match kind {
-                IdentKind::Pi => ConstKind::Pi,
-                IdentKind::Tau => ConstKind::Tau,
-                IdentKind::E => ConstKind::E,
-            }),
+            TokenKind::Ident(kind) => match kind {
+                // constants
+                IdentKind::Pi => Node::Const(ConstKind::Pi),
+                IdentKind::Tau => Node::Const(ConstKind::Tau),
+                IdentKind::E => Node::Const(ConstKind::E),
+                // functions
+                _ => {
+                    let param = Box::new(self.parse_nud()?);
+                    match kind {
+                        IdentKind::Sin => Node::Sin(param),
+                        IdentKind::Cos => Node::Cos(param),
+                        IdentKind::Tan => Node::Tan(param),
+                        IdentKind::Sqrt => {
+                            let one_half = BigRational::new(1.into(), 2.into());
+                            let one_half = Box::new(Node::Num { val: one_half, input_base: None });
+                            Node::Exp(param, one_half)
+                        },
+                        _ => unreachable!(),
+                    }
+                }
+            },
 
             TokenKind::Minus => Node::opposite(self.parse_nud()?),
             TokenKind::Plus => self.parse_nud()?,
@@ -184,5 +200,37 @@ impl<'a> Parser<'a> {
 
     pub fn parse(mut self) -> Result<Node, ParseError> {
         self.parse_range(&StopPolicy::Never)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use crate::lexer::Lexer;
+    use num_traits::One;
+
+    #[test]
+    fn it_handles_precedence_correctly_with_functions() {
+        let tokens: Vec<Token> = Lexer::new("sin(cos sqrt(1))")
+            .map(|x| x.unwrap())
+            .collect();
+        let parser = Parser::new(&tokens);
+        let root_node = parser.parse().unwrap();
+        assert_eq!(
+            root_node,
+            Node::Sin(Box::new(
+                Node::Cos(Box::new(
+                    Node::Exp(
+                        Box::new(Node::Num { val: One::one(), input_base: Some(10) }),
+                        // one half
+                        Box::new(Node::Num {
+                            val: BigRational::new(1.into(), 2.into()),
+                            input_base: None
+                        }),
+                    )
+                ))
+            ))
+        );
     }
 }

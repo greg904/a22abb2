@@ -9,9 +9,15 @@ pub type BigUrational = Ratio<BigUint>;
 /// A list of all possible identifiers
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IdentKind {
+    // constants
     Pi,
     Tau,
     E,
+    // functions
+    Sin,
+    Cos,
+    Tan,
+    Sqrt,
 }
 
 impl FromStr for IdentKind {
@@ -22,6 +28,10 @@ impl FromStr for IdentKind {
             "pi" => IdentKind::Pi,
             "tau" => IdentKind::Tau,
             "e" => IdentKind::E,
+            "sin" | "sine" => IdentKind::Sin,
+            "cos" | "cosine" => IdentKind::Cos,
+            "tan" | "tangent" => IdentKind::Tan,
+            "sqrt" => IdentKind::Sqrt,
             _ => return Err(()),
         })
     }

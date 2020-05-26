@@ -83,6 +83,10 @@ pub enum Node {
         children: Vec<Node>,
     },
     Exp(Box<Node>, Box<Node>),
+    // functions
+    Sin(Box<Node>),
+    Cos(Box<Node>),
+    Tan(Box<Node>),
 }
 
 impl Node {
@@ -101,13 +105,7 @@ impl Node {
                 val: ratio_to_f64(&val),
                 display_base: input_base,
             },
-            Node::Inverse(inner) => {
-                let inner = inner.eval();
-                EvalResult {
-                    val: 1.0 / inner.val,
-                    display_base: inner.display_base,
-                }
-            }
+            Node::Inverse(inner) => inner.eval_map(|x| 1.0 / x),
             Node::VarOp { kind, children } => Node::eval_var_op(children.into_iter(), kind),
             Node::Exp(a, b) => {
                 let a = a.eval();
@@ -116,7 +114,10 @@ impl Node {
                     val: a.val.powf(b.val),
                     display_base: Node::get_op_result_base(a.display_base, b.display_base),
                 }
-            }
+            },
+            Node::Sin(inner) => inner.eval_map(|x| x.sin()),
+            Node::Cos(inner) => inner.eval_map(|x| x.cos()),
+            Node::Tan(inner) => inner.eval_map(|x| x.tan()),
         }
     }
 
@@ -136,6 +137,14 @@ impl Node {
         EvalResult {
             val: result,
             display_base: result_base,
+        }
+    }
+
+    fn eval_map<F: Fn(f64) -> f64>(self, f: F) -> EvalResult {
+        let original = self.eval();
+        EvalResult {
+            val: f(original.val),
+            display_base: original.display_base,
         }
     }
 
@@ -418,10 +427,12 @@ fn get_node_priority(node: &Node) -> NodePriority {
             VarOpKind::Mul => NodePriority::Mul,
         },
         Node::Exp(_, _) => NodePriority::Exp,
+        // functions
+        Node::Sin(_) | Node::Cos(_) | Node::Tan(_) => NodePriority::Value,
     }
 }
 
-fn write_with_paren(f: &mut fmt::Formatter<'_>, node: &Node, curr_prio: NodePriority, right_assoc: bool) -> fmt::Result {
+fn write_with_paren(f: &mut fmt::Formatter<'_>, node: &Node, curr_prio: NodePriority, right_assoc: bool, needs_separation: bool) -> fmt::Result {
     let needs_paren = if right_assoc {
         // pow(1,pow(2,3)) => 1^(2^3)
         get_node_priority(node) <= curr_prio
@@ -431,12 +442,19 @@ fn write_with_paren(f: &mut fmt::Formatter<'_>, node: &Node, curr_prio: NodePrio
     };
     if needs_paren {
         f.write_char('(')?;
+    } else if needs_separation {
+        f.write_char(' ')?;
     }
     node.fmt(f)?;
     if needs_paren {
         f.write_char(')')?;
     }
     Ok(())
+}
+
+fn write_func(f: &mut fmt::Formatter<'_>, name: &str, inner: &Node) -> fmt::Result {
+    f.write_str(name)?;
+    write_with_paren(f, inner, NodePriority::Value, false, true)
 }
 
 impl Display for Node {
@@ -452,7 +470,7 @@ impl Display for Node {
 
             Node::Inverse(inner) => {
                 write!(f, "1/")?;
-                write_with_paren(f, inner, get_node_priority(self), false)
+                write_with_paren(f, inner, get_node_priority(self), false, false)
             },
             Node::VarOp { kind, children } => {
                 let mut first = true;
@@ -468,23 +486,27 @@ impl Display for Node {
                             if let Node::Inverse(x) = child {
                                 // directly output "/ x" instead of "* 1/x"
                                 write!(f, " / ")?;
-                                write_with_paren(f, x, NodePriority::Mul, false)?;
+                                write_with_paren(f, x, NodePriority::Mul, false, false)?;
                                 continue;
                             }
                         }
                         
                         write!(f, " {} ", op_char)?;
                     }
-                    write_with_paren(f, child, get_node_priority(self), false)?;
+                    write_with_paren(f, child, get_node_priority(self), false, false)?;
                 }
                 Ok(())
             },
             Node::Exp(a, b) => {
-                write_with_paren(f, a, NodePriority::Exp, true)?;
+                write_with_paren(f, a, NodePriority::Exp, true, false)?;
                 f.write_char('^')?;
-                write_with_paren(f, b, NodePriority::Exp, true)?;
+                write_with_paren(f, b, NodePriority::Exp, true, false)?;
                 Ok(())
             },
+            // functions
+            Node::Sin(inner) => write_func(f, "sin", inner),
+            Node::Cos(inner) => write_func(f, "cos", inner),
+            Node::Tan(inner) => write_func(f, "tan", inner),
         }
     }
 }
