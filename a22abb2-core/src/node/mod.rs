@@ -104,7 +104,7 @@ impl Node {
                 val: ratio_to_f64(&val),
                 display_base: input_base.clone(),
             },
-            Node::Inverse(inner) => inner.eval_map(|x| 1.0 / x),
+            Node::Inverse(inner) => inner.eval_map(|x| 1.0 / x, true),
             Node::VarOp { kind, children } => Node::eval_var_op(children.into_iter(), kind.clone()),
             Node::Exp(a, b) => {
                 let a = a.eval();
@@ -114,9 +114,9 @@ impl Node {
                     display_base: Node::get_op_result_base(a.display_base, b.display_base),
                 }
             },
-            Node::Sin(inner) => inner.eval_map(|x| x.sin()),
-            Node::Cos(inner) => inner.eval_map(|x| x.cos()),
-            Node::Tan(inner) => inner.eval_map(|x| x.tan()),
+            Node::Sin(inner) => inner.eval_map(|x| x.sin(), false),
+            Node::Cos(inner) => inner.eval_map(|x| x.cos(), false),
+            Node::Tan(inner) => inner.eval_map(|x| x.tan(), false),
         }
     }
 
@@ -139,11 +139,11 @@ impl Node {
         }
     }
 
-    fn eval_map<F: Fn(f64) -> f64>(&self, f: F) -> EvalResult {
+    fn eval_map<F: Fn(f64) -> f64>(&self, f: F, keep_base: bool) -> EvalResult {
         let original = self.eval();
         EvalResult {
             val: f(original.val),
-            display_base: original.display_base,
+            display_base: if keep_base { original.display_base } else { None },
         }
     }
 

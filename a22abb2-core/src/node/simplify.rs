@@ -376,8 +376,7 @@ mod tests {
             let ground_truth = node.eval();
             let simplified = simplify(node).eval();
             assert!((simplified.val - ground_truth.val).abs() < 0.001);
-            // TODO: fix
-            // assert_eq!(simplified.display_base, ground_truth.display_base);
+            assert_eq!(simplified.display_base, ground_truth.display_base);
         }
     }
 
