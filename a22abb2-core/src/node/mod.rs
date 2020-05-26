@@ -100,10 +100,10 @@ impl Node {
             },
             Node::Num { val, input_base } => EvalResult {
                 val: ratio_to_f64(&val),
-                display_base: input_base.clone(),
+                display_base: *input_base,
             },
             Node::Inverse(inner) => inner.eval_map(|x| 1.0 / x, true),
-            Node::VarOp { kind, children } => Node::eval_var_op(children.into_iter(), kind.clone()),
+            Node::VarOp { kind, children } => Node::eval_var_op(children.iter(), *kind),
             Node::Exp(a, b) => {
                 let a = a.eval();
                 let b = b.eval();
@@ -258,6 +258,7 @@ impl Mul for Node {
 impl Div for Node {
     type Output = Node;
 
+    #[allow(clippy::suspicious_arithmetic_impl)]
     fn div(self, rhs: Self) -> Self::Output {
         self * rhs.inverse()
     }

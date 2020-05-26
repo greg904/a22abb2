@@ -65,7 +65,7 @@ pub fn simplify(node: Node) -> Node {
 
                 children_by_factors
                     .entry(child)
-                    .or_insert_with(|| vec![])
+                    .or_insert_with(Vec::new)
                     .push(factor);
             }
 
@@ -183,8 +183,8 @@ pub fn simplify(node: Node) -> Node {
                         Node::Sin(_) if !is_top => -Node::three().sqrt() / Node::two(),
                         Node::Cos(_) if !is_left => Node::two().inverse(),
                         Node::Cos(_) if is_left => -Node::two().inverse(),
-                        Node::Tan(_) if is_top == !is_left => Node::three().sqrt(),
-                        Node::Tan(_) if is_top != !is_left => -Node::three().sqrt(),
+                        Node::Tan(_) if is_top != is_left => Node::three().sqrt(),
+                        Node::Tan(_) if is_top == is_left => -Node::three().sqrt(),
                         _ => unreachable!(),
                     };
                 } else if *pi_factor.denom() == 4.into() {
@@ -199,8 +199,8 @@ pub fn simplify(node: Node) -> Node {
                         Node::Sin(_) if !is_top => -Node::two().sqrt().inverse(),
                         Node::Cos(_) if !is_left => Node::two().sqrt().inverse(),
                         Node::Cos(_) if is_left => -Node::two().sqrt().inverse(),
-                        Node::Tan(_) if is_top == !is_left => Node::one(),
-                        Node::Tan(_) if is_top != !is_left => Node::minus_one(),
+                        Node::Tan(_) if is_top != is_left => Node::one(),
+                        Node::Tan(_) if is_top == is_left => Node::minus_one(),
                         _ => unreachable!(),
                     };
                 } else if *pi_factor.denom() == 6.into() {
@@ -215,19 +215,19 @@ pub fn simplify(node: Node) -> Node {
                         Node::Sin(_) if !is_top => -Node::two().inverse(),
                         Node::Cos(_) if !is_left => Node::three().sqrt() / Node::two(),
                         Node::Cos(_) if is_left => -Node::three().sqrt() / Node::two(),
-                        Node::Tan(_) if is_top == !is_left => Node::three().sqrt().inverse(),
-                        Node::Tan(_) if is_top != !is_left => -Node::three().sqrt().inverse(),
+                        Node::Tan(_) if is_top != is_left => Node::three().sqrt().inverse(),
+                        Node::Tan(_) if is_top == is_left => -Node::three().sqrt().inverse(),
                         _ => unreachable!(),
                     };
                 } 
             }
             // failed to simplify with common angle
-            return match &node {
+            match &node {
                 Node::Sin(_) => Node::Sin(Box::new(inner_simplified)),
                 Node::Cos(_) => Node::Cos(Box::new(inner_simplified)),
                 Node::Tan(_) => Node::Tan(Box::new(inner_simplified)),
                 _ => unreachable!(),
-            };
+            }
         }
 
         // fallback to doing nothing

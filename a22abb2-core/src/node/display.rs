@@ -64,7 +64,7 @@ fn is_baseless_minus_one(node: &Node) -> bool {
             (*val.denom() == (-1).into() && val.numer().is_one())) &&
             input_base.is_none();
     }
-    return false;
+    false
 }
 
 impl Display for Node {
