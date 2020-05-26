@@ -8,6 +8,7 @@ use super::{Node, VarOpKind, ConstKind};
 
 pub fn simplify(node: Node) -> Node {
     match node {
+        Node::Const(ConstKind::Tau) => Node::mul(Node::Const(ConstKind::Pi), Node::two()),
         Node::VarOp { kind, children } => {
             let children = deep_flatten_children(children, kind)
                 .into_iter()
