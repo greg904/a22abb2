@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Text.RegularExpressions;
+using Windows.ApplicationModel.Resources;
 using Windows.UI.Xaml;
 
 namespace A22abb2
@@ -88,7 +89,14 @@ namespace A22abb2
 
         public string Approximation
         {
-            get => this.result.HasFailed ? "(error)" : $"≈ {this.result.Approximation}";
+            get
+            {
+                if (this.result.HasFailed)
+                {
+                    return ResourceLoader.GetForCurrentView().GetString("CalculationFailedText");
+                }
+                return $"≈ {this.result.Approximation}";
+            }
         }
 
         public string SimplifiedExpression

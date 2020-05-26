@@ -30,10 +30,11 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <TextBlock Text="History"
-                    Style="{ThemeResource TitleTextBlockStyle}"
-                    Margin="14"
-                    Grid.Row="0"/>
+        <TextBlock x:Uid="HistoryHeader"
+                   Text="History"
+                   Style="{ThemeResource TitleTextBlockStyle}"
+                   Margin="14"
+                   Grid.Row="0"/>
         <ListView ItemsSource="{x:Bind ViewModel.History}"
                   SelectionMode="None"
                   IsItemClickEnabled="False"
@@ -79,7 +80,9 @@
                     Padding="14"
                     Spacing="14"
                     Grid.Row="2">
-            <TextBlock Text="New calculation" Style="{ThemeResource TitleTextBlockStyle}"/>
+            <TextBlock x:Uid="NewCalculationHeader"
+                       Text="New calculation"
+                       Style="{ThemeResource TitleTextBlockStyle}"/>
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
