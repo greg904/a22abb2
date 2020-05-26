@@ -8,15 +8,16 @@ use super::{ConstKind, Node, VarOpKind};
 enum NodePriority {
     AddOrSub,
     MulOrDiv,
-    ExpOrValue,
+    Exp,
+    Value,
 }
 
 fn get_node_priority(node: &Node) -> NodePriority {
     match node {
-        Node::Const(_) => NodePriority::ExpOrValue,
+        Node::Const(_) => NodePriority::Value,
         Node::Num { val, .. } => {
             if val.denom().is_one() {
-                NodePriority::ExpOrValue
+                NodePriority::Value
             } else {
                 // it will be displayed as a fraction with a division sign
                 NodePriority::MulOrDiv
@@ -27,9 +28,9 @@ fn get_node_priority(node: &Node) -> NodePriority {
             VarOpKind::Add => NodePriority::AddOrSub,
             VarOpKind::Mul => NodePriority::MulOrDiv,
         },
-        Node::Exp(_, _) => NodePriority::ExpOrValue,
+        Node::Exp(_, _) => NodePriority::Exp,
         // functions
-        Node::Sin(_) | Node::Cos(_) | Node::Tan(_) => NodePriority::ExpOrValue,
+        Node::Sin(_) | Node::Cos(_) | Node::Tan(_) => NodePriority::Exp,
     }
 }
 
@@ -61,7 +62,7 @@ fn write_with_paren(
 
 fn write_func(f: &mut fmt::Formatter<'_>, name: &str, inner: &Node) -> fmt::Result {
     f.write_str(name)?;
-    write_with_paren(f, inner, NodePriority::ExpOrValue, true, true)
+    write_with_paren(f, inner, NodePriority::Exp, true, true)
 }
 
 fn is_baseless_minus_one(node: &Node) -> bool {
@@ -155,9 +156,9 @@ impl Display for Node {
                 Ok(())
             }
             Node::Exp(a, b) => {
-                write_with_paren(f, a, NodePriority::ExpOrValue, false, false)?;
+                write_with_paren(f, a, NodePriority::Exp, false, false)?;
                 f.write_char('^')?;
-                write_with_paren(f, b, NodePriority::ExpOrValue, false, false)?;
+                write_with_paren(f, b, NodePriority::Exp, false, false)?;
                 Ok(())
             }
             // functions
