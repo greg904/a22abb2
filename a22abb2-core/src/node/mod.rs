@@ -33,13 +33,6 @@ impl VarOpKind {
         }
     }
 
-    pub fn identity_bigr(self) -> BigRational {
-        match self {
-            VarOpKind::Add => Zero::zero(),
-            VarOpKind::Mul => One::one(),
-        }
-    }
-
     pub fn eval_f64_fn(self) -> &'static dyn Fn(f64, f64) -> f64 {
         match self {
             VarOpKind::Add => &Add::add,
@@ -47,16 +40,22 @@ impl VarOpKind {
         }
     }
 
+    // TODO: move the following functions to `simplify.rs`
+    pub fn identity_bigr(self) -> BigRational {
+        match self {
+            VarOpKind::Add => Zero::zero(),
+            VarOpKind::Mul => One::one(),
+        }
+    }
     pub fn eval_bigr_fn(self) -> &'static dyn Fn(BigRational, BigRational) -> BigRational {
         match self {
             VarOpKind::Add => &Add::add,
             VarOpKind::Mul => &Mul::mul,
         }
     }
-
     fn compress(self, node: Node, count: Node) -> Node {
         match self {
-            VarOpKind::Add => Node::mul(node, count),
+            VarOpKind::Add => node * count,
             VarOpKind::Mul => Node::Exp(Box::new(node), Box::new(count)),
         }
     }

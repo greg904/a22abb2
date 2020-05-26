@@ -19,27 +19,38 @@ pub fn simplify(node: Node) -> Node {
 
             // count duplicate children
             for child in children {
-                // TODO: detect nested duplicate children
-                let (factor, child) = match kind {
+                // TODO: better algorithm
+                let (child, factor) = match kind {
                     VarOpKind::Add => match child {
                         Node::VarOp {
                             kind: VarOpKind::Mul,
-                            children: sub_children,
+                            children: mut sub_children,
                         } => {
                             match sub_children.len() {
                                 2 => {
                                     let mut iter = sub_children.into_iter();
-                                    (iter.next().unwrap(), iter.next().unwrap())
+                                    let a = iter.next().unwrap();
+                                    let b = iter.next().unwrap();
+                                    if node_factor_heuristic(&a) > node_factor_heuristic(&b) {
+                                        (a, b)
+                                    } else {
+                                        (b, a)
+                                    }
                                 }
 
                                 len if len > 2 => {
-                                    let mut iter = sub_children.into_iter();
-                                    let first = iter.next().unwrap();
+                                    // sort so that the last one is the factor
+                                    sub_children.sort_by(|a, b| node_factor_heuristic(a)
+                                        .partial_cmp(&node_factor_heuristic(b))
+                                        .unwrap());
+                                    let factor = sub_children.pop().unwrap();
                                     let remaining = Node::VarOp {
                                         kind: VarOpKind::Mul,
-                                        children: iter.collect::<Vec<_>>(),
+                                        children: sub_children,
                                     };
-                                    (first, remaining)
+                                    // TODO: better heuristics to put more
+                                    //  interesting factor first
+                                    (remaining, factor)
                                 }
 
                                 // There has to be at least two factors
@@ -51,15 +62,14 @@ pub fn simplify(node: Node) -> Node {
 
                         // Fallback to a factor of 1 because it doesn't
                         // change the end value.
-                        child => (Node::one(), child),
+                        child => (child, Node::one()),
                     },
-
                     VarOpKind::Mul => match child {
-                        Node::Exp(a, b) => (*b, *a),
+                        Node::Exp(a, b) => (*a, *b),
 
                         // Fallback to a power of 1 because it doesn't
                         // change the end value.
-                        child => (Node::one(), child),
+                        child => (child, Node::one()),
                     },
                 };
 
@@ -80,6 +90,10 @@ pub fn simplify(node: Node) -> Node {
                         1 => Some(match factors.into_iter().next().unwrap() {
                             // if the only factor is 1, then return the child directly
                             Node::Num { ref val, .. } if val.is_one() => child,
+                            // If the only factor is 0, then discard because 0
+                            // times anything is 0.
+                            Node::Num { ref val, .. } if val.is_zero() => return None,
+
                             other => kind.compress(child, other),
                         }),
                         _ => Some(kind.compress(
@@ -352,6 +366,17 @@ fn deep_flatten_children(children: Vec<Node>, op_kind: VarOpKind) -> Vec<Node> {
     }
 
     result
+}
+
+fn node_factor_heuristic(node: &Node) -> u32 {
+    // greater numbers mean "use me as a factor" when factoring
+    match node {
+        Node::Inverse(_) | Node::Sin(_) | Node::Cos(_) | Node::Tan(_) => 4,
+        Node::VarOp { .. } => 3,
+        Node::Const(_) => 2,
+        Node::Exp(_, _) => 1,
+        _ => 0,
+    }
 }
 
 #[cfg(test)]
