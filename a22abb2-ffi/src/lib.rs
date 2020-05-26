@@ -1,12 +1,12 @@
+use a22abb2_core::lexer::{Lexer, Token};
+use a22abb2_core::node;
+use a22abb2_core::parser::Parser;
 use std::f64;
 use std::ffi::CStr;
 use std::mem;
 use std::os::raw::c_char;
 use std::ptr;
 use std::slice;
-
-use a22abb2_core::lexer::{Lexer, Token};
-use a22abb2_core::parser::Parser;
 
 pub struct EvalSuccess {
     expr_simplified: String,
@@ -92,7 +92,7 @@ pub unsafe extern fn a22abb2_eval(expr: *const c_char) -> *mut EvalResult {
         Ok(val) => val,
         Err(_) => return Box::into_raw(Box::new(Err(()))),
     };
-    let reduced = root_node.deep_reduce();
+    let reduced = node::simplify(root_node);
     let reduced_str = reduced.to_string();
     let approx = reduced.eval().val;
 
