@@ -132,8 +132,12 @@ pub fn simplify(node: Node) -> Node {
             // (c^d)^b = c^(d*b)
             (Node::Exp(c, d), b) => {
                 let new_exp = simplify((*d) * b);
-                if let Node::Num { val, input_base: None } = &new_exp {
-                    if val.is_one() {
+                if let Node::Num { val, input_base } = &new_exp {
+                    // We cannot simplify if it changes the display base of the
+                    // result!
+                    let will_not_change_base = input_base.map(|x| x == 10)
+                        .unwrap_or(true);
+                    if will_not_change_base && val.is_one() {
                         // 1^k equals 1
                         return *c;
                     }
