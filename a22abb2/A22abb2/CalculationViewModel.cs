@@ -54,9 +54,9 @@ namespace A22abb2
                     else
                     {
                         // only show if there actually was a simplification
-                        simplVisible = !original.Equals(simplified);
-                        // only show if there actually was a calculation
-                        approxVisible = approx != null && !approx.Equals(simplified);
+                        simplVisible = simplified != null && !original.Equals(simplified);
+                        // only show if there actually was a calculation or if there was an error
+                        approxVisible = approx == null || !approx.Equals(simplified);
                     }
 
                     var historyVisible = simplVisible || approxVisible;
