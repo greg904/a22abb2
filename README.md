@@ -18,7 +18,7 @@ when possible</h4>
     </a>
 </p>
 
-![A screenshot of A22abb2](/images/screenshot.png?raw=true)
+![A screenshot of A22abb2](/images/screenshot_en-US.png?raw=true)
 
 ## How to build
 
