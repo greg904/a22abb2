@@ -1,4 +1,4 @@
-use num_traits::One;
+use num_traits::{One, Signed};
 use std::fmt;
 use std::fmt::{Display, Write};
 
@@ -133,6 +133,17 @@ impl Display for Node {
                                         if is_done {
                                             continue;
                                         }
+                                    }
+                                } else if let Node::Num { val, input_base } = child {
+                                    if val.is_negative() {
+                                        // directly output "- x" instead of "+ -x"
+                                        write!(f, " - ")?;
+                                        let fake_node = Node::Num {
+                                            val: -val, // remove negative sign
+                                            input_base: *input_base,
+                                        };
+                                        fake_node.fmt(f)?;
+                                        continue;
                                     }
                                 }
                                 '+'
