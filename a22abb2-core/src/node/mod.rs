@@ -90,7 +90,7 @@ pub enum Node {
 
 impl Node {
     /// Approximates the node value.
-    pub fn eval(self) -> EvalResult {
+    pub fn eval(&self) -> EvalResult {
         match self {
             Node::Const(kind) => EvalResult {
                 val: match kind {
@@ -102,10 +102,10 @@ impl Node {
             },
             Node::Num { val, input_base } => EvalResult {
                 val: ratio_to_f64(&val),
-                display_base: input_base,
+                display_base: input_base.clone(),
             },
             Node::Inverse(inner) => inner.eval_map(|x| 1.0 / x),
-            Node::VarOp { kind, children } => Node::eval_var_op(children.into_iter(), kind),
+            Node::VarOp { kind, children } => Node::eval_var_op(children.into_iter(), kind.clone()),
             Node::Exp(a, b) => {
                 let a = a.eval();
                 let b = b.eval();
@@ -120,9 +120,9 @@ impl Node {
         }
     }
 
-    fn eval_var_op<I>(children: I, kind: VarOpKind) -> EvalResult
+    fn eval_var_op<'a, I>(children: I, kind: VarOpKind) -> EvalResult
     where
-        I: Iterator<Item = Node>,
+        I: Iterator<Item = &'a Node>,
     {
         let mut result = kind.identity_f64();
         let mut result_base = None;
@@ -139,7 +139,7 @@ impl Node {
         }
     }
 
-    fn eval_map<F: Fn(f64) -> f64>(self, f: F) -> EvalResult {
+    fn eval_map<F: Fn(f64) -> f64>(&self, f: F) -> EvalResult {
         let original = self.eval();
         EvalResult {
             val: f(original.val),
@@ -160,21 +160,35 @@ impl Node {
         }
     }
 
-    pub fn zero() -> Node {
+    fn zero() -> Node {
         Node::Num {
             val: Zero::zero(),
             input_base: None,
         }
     }
 
-    pub fn one() -> Node {
+    fn one() -> Node {
         Node::Num {
             val: One::one(),
             input_base: None,
         }
     }
 
-    pub fn minus_one() -> Node {
+    fn two() -> Node {
+        Node::Num {
+            val: BigRational::from_integer(2.into()),
+            input_base: None,
+        }
+    }
+
+    fn three() -> Node {
+        Node::Num {
+            val: BigRational::from_integer(3.into()),
+            input_base: None,
+        }
+    }
+
+    fn minus_one() -> Node {
         Node::Num {
             val: -BigRational::one(),
             input_base: None,
@@ -204,8 +218,19 @@ impl Node {
         }
     }
 
-    pub fn opposite(inner: Node) -> Node {
-        Node::mul(Node::minus_one(), inner)
+    pub fn opposite(self) -> Node {
+        Node::mul(Node::minus_one(), self)
+    }
+
+    pub fn inverse(self) -> Node {
+        Node::Inverse(Box::new(self))
+    }
+
+    pub fn sqrt(self) -> Node {
+        Node::Exp(
+            Box::new(self),
+            Box::new(Node::two().inverse()),
+        )
     }
 }
 

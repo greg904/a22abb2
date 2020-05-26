@@ -1,6 +1,6 @@
 use either::Either;
 use num_rational::BigRational;
-use num_traits::{One, ToPrimitive, Zero};
+use num_traits::{One, Signed, Zero};
 use std::collections::HashMap;
 use std::iter;
 
@@ -131,30 +131,102 @@ pub fn simplify(node: Node) -> Node {
 
         Node::Sin(ref inner) | Node::Cos(ref inner) | Node::Tan(ref inner) => {
             let inner_simplified = simplify(*inner.clone());
-            if let Some(mut pi_multiplier) = get_pi_multiplier(&inner_simplified) {
+            if let Some(mut pi_factor) = get_pi_factor(&inner_simplified) {
                 // simplify (2a + b)pi as b*pi with -1 <= b <= 1
-                pi_multiplier %= 2;
+                pi_factor %= BigRational::from_integer(2.into());
                 // Map negative b's to positive, but keep the same result in
                 // the end.
-                if pi_multiplier < 0 {
-                    pi_multiplier += 2;
+                if pi_factor.is_negative() {
+                    pi_factor += BigRational::from_integer(2.into());
                 }
-                return match pi_multiplier {
-                    0 => match &node {
-                        Node::Sin(_) | Node::Tan(_) => Node::zero(),
+                if pi_factor.is_zero() {
+                    return match &node {
+                        Node::Sin(_) => Node::zero(),
                         Node::Cos(_) => Node::one(),
+                        Node::Tan(_) => Node::zero(),
                         _ => unreachable!(),
-                    },
-                    1 => match &node {
-                        Node::Sin(_) => Node::one(),
+                    };
+                } else if pi_factor.is_one() {
+                    return match &node {
+                        Node::Sin(_) => Node::zero(),
                         Node::Cos(_) => Node::minus_one(),
                         Node::Tan(_) => Node::zero(),
                         _ => unreachable!(),
-                    }
-                    _ => unreachable!(),
-                };
+                    };
+                } else if *pi_factor.denom() == 2.into() {
+                    // could be 1/2 or 3/2
+                    return if pi_factor.numer().is_one() {
+                        match &node {
+                            Node::Sin(_) => Node::one(),
+                            Node::Cos(_) => Node::zero(),
+                            Node::Tan(_) => todo!("handle errors gracefully"),
+                            _ => unreachable!(),
+                        }
+                    } else {
+                        match &node {
+                            Node::Sin(_) => Node::minus_one(),
+                            Node::Cos(_) => Node::zero(),
+                            Node::Tan(_) => todo!("handle errors gracefully"),
+                            _ => unreachable!(),
+                        }
+                    };
+                } else if *pi_factor.denom() == 3.into() {
+                    // pi/2 < x < 3pi/2
+                    let is_left = *pi_factor.numer() > 1.into() &&
+                        *pi_factor.numer() < 5.into();
+                    // 0 < x < pi
+                    let is_top = *pi_factor.numer() < 3.into();
+
+                    return match &node {
+                        Node::Sin(_) if is_top => Node::div(Node::three().sqrt(), Node::two()),
+                        Node::Sin(_) if !is_top => Node::div(Node::three().sqrt(), Node::two()).opposite(),
+                        Node::Cos(_) if is_left => Node::two().inverse(), // .opposite()
+                        Node::Cos(_) if !is_left => Node::two().inverse(),
+                        Node::Tan(_) if is_top == !is_left => Node::three().sqrt(),
+                        Node::Tan(_) if is_top != is_left => Node::three().sqrt().opposite(),
+                        _ => unreachable!(),
+                    };
+                } else if *pi_factor.denom() == 4.into() {
+                    // pi/2 < x < 3pi/2
+                    let is_left = *pi_factor.numer() > 2.into() &&
+                        *pi_factor.numer() < 6.into();
+                    // 0 < x < pi
+                    let is_top = *pi_factor.numer() < 4.into();
+
+                    return match &node {
+                        Node::Sin(_) if is_top => Node::two().sqrt().inverse(),
+                        Node::Sin(_) if !is_top => Node::two().sqrt().inverse().opposite(),
+                        Node::Cos(_) if is_left => Node::two().sqrt().inverse(),
+                        Node::Cos(_) if !is_left => Node::two().sqrt().inverse().opposite(),
+                        Node::Tan(_) if is_top == !is_left => Node::one(),
+                        Node::Tan(_) if is_top != !is_left => Node::minus_one(),
+                        _ => unreachable!(),
+                    };
+                } else if *pi_factor.denom() == 6.into() {
+                    // pi/2 < x < 3pi/2
+                    let is_left = *pi_factor.numer() > 3.into() &&
+                        *pi_factor.numer() < 9.into();
+                    // 0 < x < pi
+                    let is_top = *pi_factor.numer() < 6.into();
+
+                    return match &node {
+                        Node::Sin(_) if is_top => Node::two().inverse(),
+                        Node::Sin(_) if !is_top => Node::two().inverse().opposite(),
+                        Node::Cos(_) if is_left => Node::two().sqrt().inverse().opposite(),
+                        Node::Cos(_) if !is_left => Node::two().sqrt().inverse(),
+                        Node::Tan(_) if is_top == !is_left => Node::three().sqrt().inverse(),
+                        Node::Tan(_) if is_top != is_left => Node::three().sqrt().inverse().opposite(),
+                        _ => unreachable!(),
+                    };
+                } 
             }
-            node
+            // failed to simplify with common angle
+            return match &node {
+                Node::Sin(_) => Node::Sin(Box::new(inner_simplified)),
+                Node::Cos(_) => Node::Cos(Box::new(inner_simplified)),
+                Node::Tan(_) => Node::Tan(Box::new(inner_simplified)),
+                _ => unreachable!(),
+            };
         }
 
         // fallback to doing nothing
@@ -162,31 +234,25 @@ pub fn simplify(node: Node) -> Node {
     }
 }
 
-fn get_pi_multiplier(node: &Node) -> Option<i64> {
+fn get_pi_factor(node: &Node) -> Option<BigRational> {
     match node {
-        Node::Const(ConstKind::Pi) => Some(1),
-        Node::Const(ConstKind::Tau) => Some(2),
-        Node::Num { val, .. } if val.is_zero() => Some(0),
+        Node::Const(ConstKind::Pi) => Some(BigRational::from_integer(2.into())),
+        Node::Const(ConstKind::Tau) => Some(BigRational::from_integer(4.into())),
+        Node::Num { val, .. } if val.is_zero() => Some(Zero::zero()),
         Node::VarOp { children, kind: VarOpKind::Mul } => {
-            let mut multiplier: i64 = 1;
+            let mut total_factor: BigRational = One::one();
             let mut has_pi = false;
-            for c in children {
-                if let Node::Num { val, .. } = c {
-                    if !val.denom().is_one() {
-                        // no support for fractional multipliers
-                        return None;
-                    }
-                    let new = val.numer().to_i64()
-                        .and_then(|x| multiplier.checked_mul(x));
-                    match new {
-                        Some(x) => multiplier = x,
-                        // overflow error
-                        None => return None,
-                    }
-                } else if let Some(m) = get_pi_multiplier(&c) {
-                    if m == 0 {
+            for child in children {
+                if let Node::Num { val, .. } = child {
+                    if val.is_zero() {
                         // zero times anything is zero
-                        return Some(0);
+                        return Some(Zero::zero());
+                    }
+                    total_factor *= val;
+                } else if let Some(factor) = get_pi_factor(&child) {
+                    if factor.is_zero() {
+                        // zero times anything is zero
+                        return Some(Zero::zero());
                     }
                     if has_pi {
                         // We already have pi, so this will be pi^2 which we
@@ -194,22 +260,15 @@ fn get_pi_multiplier(node: &Node) -> Option<i64> {
                         // return the multiplier of pi as an integer.
                         return None;
                     }
-                    let new = multiplier.checked_mul(m);
-                    match new {
-                        Some(x) => {
-                            multiplier = x;
-                            has_pi = true;
-                        }
-                        // overflow error
-                        None => return None,
-                    }
+                    total_factor *= factor;
+                    has_pi = true;
                 } else {
                     // complex node that we do not understand
                     return None;
                 }
             }
             if has_pi {
-                Some(multiplier)
+                Some(total_factor)
             } else {
                 None
             }
@@ -287,4 +346,47 @@ fn deep_flatten_children(children: Vec<Node>, op_kind: VarOpKind) -> Vec<Node> {
     }
 
     result
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_simplifies_trigonometric_functions_with_common_angles() {
+        // x = n*pi/6
+        // 0 <= x < 2pi
+        test_trigonometric_functions_on_range(0, 12, 6);
+
+        // x = n*pi/4
+        // 0 <= x < 2pi
+        test_trigonometric_functions_on_range(0, 8, 4);
+
+        // test outside [0; 2pi] range
+        test_trigonometric_functions_on_range(30, 40, 4);
+        // test negative
+        test_trigonometric_functions_on_range(-100, -90, 3);
+    }
+
+    fn test_trigonometric_functions(input: &Node) {
+        const TRIGO_FUNCS: [&dyn Fn(Box<Node>) -> Node; 3] = [&Node::Sin, &Node::Cos, &Node::Tan];
+        for func in &TRIGO_FUNCS {
+            let node = func(Box::new(input.clone()));
+            let ground_truth = node.eval();
+            let simplified = simplify(node).eval();
+            assert!((simplified.val - ground_truth.val).abs() < 0.001);
+            assert_eq!(simplified.display_base, ground_truth.display_base);
+        }
+    }
+
+    fn test_trigonometric_functions_on_range(from: i32, to: i32, denom: u32) {
+        for n in from..to {
+            let input = Node::Num {
+                val: BigRational::new(n.into(), denom.into()),
+                input_base: None,
+            };
+            test_trigonometric_functions(&input);
+        }
+    }
 }
