@@ -66,7 +66,10 @@ pub fn simplify(node: Node) -> Node {
                     },
                     VarOpKind::Mul => match child {
                         Node::Exp(a, b) => (*a, *b),
-
+                        // Transform 1/x into x^-1.
+                        // For example, this will allow us to do the following
+                        // simplification: x * 1/x = x^1 * x^-1 = 1
+                        Node::Inverse(inner) => (*inner, Node::minus_one()),
                         // Fallback to a power of 1 because it doesn't
                         // change the end value.
                         child => (child, Node::one()),
