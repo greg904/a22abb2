@@ -127,10 +127,19 @@ pub fn simplify(node: Node) -> Node {
         Node::Exp(a, b) => match (simplify(*a), simplify(*b)) {
             // 1^k equals 1
             (Node::Num { ref val, .. }, _) if val.is_one() => Node::one(),
-
             // k^0 equals 1
             (_, Node::Num { ref val, .. }) if val.is_zero() => Node::one(),
-
+            // (c^d)^b = c^(d*b)
+            (Node::Exp(c, d), b) => {
+                let new_exp = simplify((*d) * b);
+                if let Node::Num { val, input_base: None } = &new_exp {
+                    if val.is_one() {
+                        // 1^k equals 1
+                        return *c;
+                    }
+                }
+                Node::Exp(c, Box::new(new_exp))
+            },
             // we cannot simplify
             (a, b) => Node::Exp(Box::new(a), Box::new(b)),
         },
@@ -257,7 +266,7 @@ fn get_pi_factor(node: &Node) -> Option<BigRational> {
     match node {
         Node::Const(ConstKind::Pi) => Some(BigRational::from_integer(1.into())),
         Node::Const(ConstKind::Tau) => Some(BigRational::from_integer(2.into())),
-        Node::Num { val, .. } => Some(val.clone()),
+        Node::Num { val, .. } if val.is_zero() => Some(Zero::zero()),
         Node::VarOp {
             children,
             kind: VarOpKind::Mul,
