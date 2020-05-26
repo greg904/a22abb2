@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Input;
 using Windows.System;
+using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
@@ -61,7 +62,8 @@ namespace A22abb2
 
         public void CommitIfValid()
         {
-            if (this.CurrentCalculation.HasFailed)
+            if (this.CurrentCalculation.HasFailed ||
+                this.CurrentCalculation.HistoryVisibility == Visibility.Collapsed)
             {
                 return;
             }
