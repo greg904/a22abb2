@@ -75,7 +75,7 @@ impl<'a> Parser<'a> {
                 }
             },
 
-            TokenKind::Minus => Node::opposite(self.parse_nud()?),
+            TokenKind::Minus => -self.parse_nud()?,
             TokenKind::Plus => self.parse_nud()?,
             TokenKind::OpenParen => {
                 let expr = self.parse_range(&StopPolicy::IfWeakerOrEqual(Power::CloseParen))?;
@@ -111,18 +111,9 @@ impl<'a> Parser<'a> {
 
         Ok(match token.kind {
             // left associativity
-            TokenKind::Plus => Node::add(
-                left,
-                self.parse_range(&StopPolicy::IfWeakerOrEqual(Power::Add))?,
-            ),
-            TokenKind::Minus => Node::sub(
-                left,
-                self.parse_range(&StopPolicy::IfWeakerOrEqual(Power::Add))?,
-            ),
-            TokenKind::Slash => Node::div(
-                left,
-                self.parse_range(&StopPolicy::IfWeakerOrEqual(Power::Mul))?,
-            ),
+            TokenKind::Plus => left + self.parse_range(&StopPolicy::IfWeakerOrEqual(Power::Add))?,
+            TokenKind::Minus => left - self.parse_range(&StopPolicy::IfWeakerOrEqual(Power::Add))?,
+            TokenKind::Slash => left / self.parse_range(&StopPolicy::IfWeakerOrEqual(Power::Mul))?,
 
             // right associativity: 1^2^3 is parsed as exp(1, exp(2, 3)), not exp(exp(1, 2), 3)
             TokenKind::Hat => Node::Exp(
@@ -137,11 +128,7 @@ impl<'a> Parser<'a> {
                     // do not consume the token if it is implicit multiplication
                     self.index = original_index;
                 }
-
-                Node::mul(
-                    left,
-                    self.parse_range(&StopPolicy::IfWeakerOrEqual(Power::Mul))?,
-                )
+                left * self.parse_range(&StopPolicy::IfWeakerOrEqual(Power::Mul))?
             }
         })
     }

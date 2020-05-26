@@ -8,7 +8,7 @@ use super::{Node, VarOpKind, ConstKind};
 
 pub fn simplify(node: Node) -> Node {
     match node {
-        Node::Const(ConstKind::Tau) => Node::mul(Node::Const(ConstKind::Pi), Node::two()),
+        Node::Const(ConstKind::Tau) => Node::Const(ConstKind::Pi) * Node::two(),
         Node::VarOp { kind, children } => {
             let children = deep_flatten_children(children, kind)
                 .into_iter()
@@ -179,12 +179,12 @@ pub fn simplify(node: Node) -> Node {
                     let is_top = *pi_factor.numer() < 3.into();
 
                     return match &node {
-                        Node::Sin(_) if is_top => Node::div(Node::three().sqrt(), Node::two()),
-                        Node::Sin(_) if !is_top => Node::div(Node::three().sqrt(), Node::two()).opposite(),
-                        Node::Cos(_) if is_left => Node::two().inverse(), // .opposite()
+                        Node::Sin(_) if is_top => Node::three().sqrt() / Node::two(),
+                        Node::Sin(_) if !is_top => -Node::three().sqrt() / Node::two(),
                         Node::Cos(_) if !is_left => Node::two().inverse(),
+                        Node::Cos(_) if is_left => -Node::two().inverse(),
                         Node::Tan(_) if is_top == !is_left => Node::three().sqrt(),
-                        Node::Tan(_) if is_top != is_left => Node::three().sqrt().opposite(),
+                        Node::Tan(_) if is_top != !is_left => -Node::three().sqrt(),
                         _ => unreachable!(),
                     };
                 } else if *pi_factor.denom() == 4.into() {
@@ -196,9 +196,9 @@ pub fn simplify(node: Node) -> Node {
 
                     return match &node {
                         Node::Sin(_) if is_top => Node::two().sqrt().inverse(),
-                        Node::Sin(_) if !is_top => Node::two().sqrt().inverse().opposite(),
-                        Node::Cos(_) if is_left => Node::two().sqrt().inverse(),
-                        Node::Cos(_) if !is_left => Node::two().sqrt().inverse().opposite(),
+                        Node::Sin(_) if !is_top => -Node::two().sqrt().inverse(),
+                        Node::Cos(_) if !is_left => Node::two().sqrt().inverse(),
+                        Node::Cos(_) if is_left => -Node::two().sqrt().inverse(),
                         Node::Tan(_) if is_top == !is_left => Node::one(),
                         Node::Tan(_) if is_top != !is_left => Node::minus_one(),
                         _ => unreachable!(),
@@ -212,11 +212,11 @@ pub fn simplify(node: Node) -> Node {
 
                     return match &node {
                         Node::Sin(_) if is_top => Node::two().inverse(),
-                        Node::Sin(_) if !is_top => Node::two().inverse().opposite(),
-                        Node::Cos(_) if is_left => Node::two().sqrt().inverse().opposite(),
-                        Node::Cos(_) if !is_left => Node::two().sqrt().inverse(),
+                        Node::Sin(_) if !is_top => -Node::two().inverse(),
+                        Node::Cos(_) if !is_left => Node::three().sqrt() / Node::two(),
+                        Node::Cos(_) if is_left => -Node::three().sqrt() / Node::two(),
                         Node::Tan(_) if is_top == !is_left => Node::three().sqrt().inverse(),
-                        Node::Tan(_) if is_top != is_left => Node::three().sqrt().inverse().opposite(),
+                        Node::Tan(_) if is_top != !is_left => -Node::three().sqrt().inverse(),
                         _ => unreachable!(),
                     };
                 } 
@@ -237,9 +237,9 @@ pub fn simplify(node: Node) -> Node {
 
 fn get_pi_factor(node: &Node) -> Option<BigRational> {
     match node {
-        Node::Const(ConstKind::Pi) => Some(BigRational::from_integer(2.into())),
-        Node::Const(ConstKind::Tau) => Some(BigRational::from_integer(4.into())),
-        Node::Num { val, .. } if val.is_zero() => Some(Zero::zero()),
+        Node::Const(ConstKind::Pi) => Some(BigRational::from_integer(1.into())),
+        Node::Const(ConstKind::Tau) => Some(BigRational::from_integer(2.into())),
+        Node::Num { val, .. } => Some(val.clone()),
         Node::VarOp { children, kind: VarOpKind::Mul } => {
             let mut total_factor: BigRational = One::one();
             let mut has_pi = false;
@@ -375,15 +375,21 @@ mod tests {
         for func in &TRIGO_FUNCS {
             let node = func(Box::new(input.clone()));
             let ground_truth = node.eval();
+            if ground_truth.val.abs() > 99999999.0 {
+                // impossible tangeant
+                continue;
+            }
             let simplified = simplify(node).eval();
-            assert!((simplified.val - ground_truth.val).abs() < 0.001);
+            assert!((simplified.val - ground_truth.val).abs() < 0.001,
+                "input: {}, output: {}, expected: {}",
+                input, simplified.val, ground_truth.val);
             assert_eq!(simplified.display_base, ground_truth.display_base);
         }
     }
 
     fn test_trigonometric_functions_on_range(from: i32, to: i32, denom: u32) {
-        for n in from..to {
-            let input = Node::Num {
+        for n in from..=to {
+            let input = Node::Const(ConstKind::Pi) * Node::Num {
                 val: BigRational::new(n.into(), denom.into()),
                 input_base: Some(16),
             };

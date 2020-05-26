@@ -5,7 +5,7 @@ mod display;
 use num_rational::BigRational;
 use num_traits::{One, Zero};
 use std::f64::consts::{E, PI};
-use std::ops::{Add, Mul};
+use std::ops::*;
 
 use crate::ratio2flt::ratio_to_f64;
 use crate::EvalResult;
@@ -193,33 +193,6 @@ impl Node {
         }
     }
 
-    pub fn add(a: Node, b: Node) -> Node {
-        Node::op(VarOpKind::Add, a, b)
-    }
-
-    pub fn sub(a: Node, b: Node) -> Node {
-        Node::add(a, Node::opposite(b))
-    }
-
-    pub fn mul(a: Node, b: Node) -> Node {
-        Node::op(VarOpKind::Mul, a, b)
-    }
-
-    pub fn div(a: Node, b: Node) -> Node {
-        Node::mul(a, Node::Inverse(Box::new(b)))
-    }
-
-    fn op(kind: VarOpKind, a: Node, b: Node) -> Node {
-        Node::VarOp {
-            kind,
-            children: vec![a, b],
-        }
-    }
-
-    pub fn opposite(self) -> Node {
-        Node::mul(Node::minus_one(), self)
-    }
-
     pub fn inverse(self) -> Node {
         Node::Inverse(Box::new(self))
     }
@@ -229,5 +202,63 @@ impl Node {
             Box::new(self),
             Box::new(Node::two().inverse()),
         )
+    }
+
+    pub fn sin(self) -> Node {
+        Node::Sin(Box::new(self))
+    }
+
+    pub fn cos(self) -> Node {
+        Node::Cos(Box::new(self))
+    }
+
+    pub fn tan(self) -> Node {
+        Node::Tan(Box::new(self))
+    }
+}
+
+impl Add for Node {
+    type Output = Node;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Node::VarOp {
+            kind: VarOpKind::Add,
+            children: vec![self, rhs],
+        }
+    }
+}
+
+impl Neg for Node {
+    type Output = Node;
+
+    fn neg(self) -> Self::Output {
+        Node::minus_one() * self
+    }
+}
+
+impl Sub for Node {
+    type Output = Node;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        self + (-rhs)
+    }
+}
+
+impl Mul for Node {
+    type Output = Node;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        Node::VarOp {
+            kind: VarOpKind::Mul,
+            children: vec![self, rhs],
+        }
+    }
+}
+
+impl Div for Node {
+    type Output = Node;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        self * rhs.inverse()
     }
 }
