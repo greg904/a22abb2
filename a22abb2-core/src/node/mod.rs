@@ -305,9 +305,16 @@ impl Display for Node {
                 ConstKind::Tau => write!(f, "tau"),
                 ConstKind::E => write!(f, "e"),
             },
-            // TODO: print in correct base
-            Node::Num { val, input_base: _ } => write!(f, "{}", val),
-
+            Node::Num { val, input_base } => {
+                let input_base = input_base.unwrap_or(10);
+                match input_base {
+                    2 if val.is_integer() => write!(f, "{:#b}", val.numer()),
+                    8 => write!(f, "{:#o}", val.numer()),
+                    10 if val.is_integer() => write!(f, "{}", val),
+                    16 if val.is_integer() => write!(f, "{:#X}", val.numer()),
+                    _ => todo!("print in bases other than 10 for decimal number"),
+                }
+            },
             Node::Inverse(inner) => {
                 write!(f, "1/")?;
                 write_with_paren(f, inner, get_node_priority(self), true, false)
@@ -406,8 +413,7 @@ mod tests {
             let ground_truth = root_node.eval();
             let result_from_formatted = new_root_node.eval();
             assert!((result_from_formatted.val - ground_truth.val).abs() < 0.001);
-            // TODO: fix
-            // assert_eq!(result_from_formatted.display_base, ground_truth.display_base);
+            assert_eq!(result_from_formatted.display_base, ground_truth.display_base);
         }
     }
 }
