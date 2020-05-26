@@ -123,7 +123,8 @@ pub fn simplify(node: Node) -> Node {
                     input_base,
                 }
             },
-
+            // inverse of inverse = identity
+            Node::Inverse(b) => *b,
             // cannot simplify
             node => Node::Inverse(Box::new(node)),
         },
