@@ -9,7 +9,7 @@ use std::iter;
 use std::ops::{Add, Mul};
 
 use num_rational::BigRational;
-use num_traits::{One, Zero};
+use num_traits::{One, Zero, ToPrimitive};
 
 use either::Either;
 
@@ -284,6 +284,34 @@ impl Node {
                 node => Node::Inverse(Box::new(node)),
             },
 
+            Node::Sin(ref inner) | Node::Cos(ref inner) | Node::Tan(ref inner) => {
+                let inner_reduced = inner.clone().deep_reduce();
+                if let Some(mut pi_multiplier) = inner_reduced.get_pi_multiplier() {
+                    // simplify (2a + b)pi as b*pi with -1 <= b <= 1
+                    pi_multiplier %= 2;
+                    // Map negative b's to positive, but keep the same result in
+                    // the end.
+                    if pi_multiplier < 0 {
+                        pi_multiplier += 2;
+                    }
+                    return match pi_multiplier {
+                        0 => match &self {
+                            Node::Sin(_) | Node::Tan(_) => Node::zero(),
+                            Node::Cos(_) => Node::one(),
+                            _ => unreachable!(),
+                        },
+                        1 => match &self {
+                            Node::Sin(_) => Node::one(),
+                            Node::Cos(_) => Node::minus_one(),
+                            Node::Tan(_) => Node::zero(),
+                            _ => unreachable!(),
+                        }
+                        _ => unreachable!(),
+                    };
+                }
+                self
+            }
+
             // fallback to doing nothing
             node => node,
         }
@@ -358,6 +386,69 @@ impl Node {
         }
 
         result
+    }
+
+    fn get_pi_multiplier(&self) -> Option<i64> {
+        match self {
+            Node::Const(ConstKind::Pi) => Some(1),
+            Node::Const(ConstKind::Tau) => Some(2),
+            Node::Num { val, .. } if val.is_zero() => Some(0),
+            Node::VarOp { children, kind: VarOpKind::Mul } => {
+                let mut multiplier: i64 = 1;
+                let mut has_pi = false;
+                for c in children {
+                    if let Node::Num { val, .. } = c {
+                        if !val.denom().is_one() {
+                            // no support for fractional multipliers
+                            return None;
+                        }
+                        let new = val.numer().to_i64()
+                            .and_then(|x| multiplier.checked_mul(x));
+                        match new {
+                            Some(x) => multiplier = x,
+                            // overflow error
+                            None => return None,
+                        }
+                    } else if let Some(m) = c.get_pi_multiplier() {
+                        if m == 0 {
+                            // zero times anything is zero
+                            return Some(0);
+                        }
+                        if has_pi {
+                            // We already have pi, so this will be pi^2 which we
+                            // do not support here because we're supposed to
+                            // return the multiplier of pi as an integer.
+                            return None;
+                        }
+                        let new = multiplier.checked_mul(m);
+                        match new {
+                            Some(x) => {
+                                multiplier = x;
+                                has_pi = true;
+                            }
+                            // overflow error
+                            None => return None,
+                        }
+                    } else {
+                        // complex node that we do not understand
+                        return None;
+                    }
+                }
+                if has_pi {
+                    Some(multiplier)
+                } else {
+                    None
+                }
+            },
+            _ => None,
+        }
+    }
+
+    pub fn zero() -> Node {
+        Node::Num {
+            val: Zero::zero(),
+            input_base: None,
+        }
     }
 
     pub fn one() -> Node {
