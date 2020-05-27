@@ -12,7 +12,7 @@ use super::{ConstKind, Node};
 /// A description of an error that happened while trying to simplify a node.
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum SimplifyError {
-    ZeroToThePowerOfZero,
+    ZeroToPowerOfNonPositive,
     Tan90Or270,
 }
 
@@ -52,6 +52,9 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
                     input_base: input_base_b,
                 },
             ) => {
+                if val_a.is_zero() && !val_b.is_positive() {
+                    return Err(SimplifyError::ZeroToPowerOfNonPositive);
+                }
                 fn ratio_to_i32(ratio: &BigRational) -> Option<i32> {
                     if ratio.denom().is_one() {
                         ratio.numer().to_i32()

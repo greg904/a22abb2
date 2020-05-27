@@ -22,7 +22,7 @@ pub struct EvalSuccess {
 /// A description of the error of a calculation.
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum EvalError {
-    ZeroToThePowerOfZero,
+    ZeroToPowerOfNonPositive,
     Tan90Or270,
 }
 
@@ -46,44 +46,48 @@ pub fn eval(node: &Node) -> Result<EvalSuccess, EvalError> {
         Node::Exp(a, b) => {
             let a = eval(a)?;
             let b = eval(b)?;
-            if b.val.approx_eq(
+            let a_is_zero = a.val.approx_eq(
                 0.0,
                 F64Margin {
                     epsilon: 0.0,
                     ulps: 2,
                 },
-            ) {
-                if a.val.approx_eq(
-                    0.0,
-                    F64Margin {
-                        epsilon: 0.0,
-                        ulps: 2,
-                    },
-                ) {
-                    return Err(EvalError::ZeroToThePowerOfZero);
-                }
+            );
+            let b_is_zero = b.val.approx_eq(
+                0.0,
+                F64Margin {
+                    epsilon: 0.0,
+                    ulps: 2,
+                },
+            );
+            let b_is_one = b.val.approx_eq(
+                1.0,
+                F64Margin {
+                    epsilon: 0.0,
+                    ulps: 2,
+                },
+            );
+            let b_is_minus_one = b.val.approx_eq(
+                0.0,
+                F64Margin {
+                    epsilon: 0.0,
+                    ulps: 2,
+                },
+            );
+            if a_is_zero && (b_is_zero || b.val < 0.0) {
+                return Err(EvalError::ZeroToPowerOfNonPositive);
+            }
+            if b_is_zero {
                 return Ok(EvalSuccess {
                     val: 1.0,
                     display_base: a.display_base,
                 });
-            } else if b.val.approx_eq(
-                1.0,
-                F64Margin {
-                    epsilon: 0.0,
-                    ulps: 3,
-                },
-            ) {
+            } else if b_is_one {
                 return Ok(EvalSuccess {
                     val: a.val,
                     display_base: a.display_base,
                 });
-            } else if b.val.approx_eq(
-                -1.0,
-                F64Margin {
-                    epsilon: 0.0,
-                    ulps: 3,
-                },
-            ) {
+            } else if b_is_minus_one {
                 return Ok(EvalSuccess {
                     val: 1.0 / a.val,
                     display_base: a.display_base,
@@ -245,11 +249,16 @@ mod tests {
     use crate::node::util::common;
 
     #[test]
-    fn it_errors_with_pow_0_0() {
+    fn it_errors_with_pow_0_to_power_of_non_positive() {
         // 0^0
         let input = Node::Exp(Box::new(common::zero()), Box::new(common::zero()));
         let result = eval(&input);
-        assert_eq!(result, Err(EvalError::ZeroToThePowerOfZero));
+        assert_eq!(result, Err(EvalError::ZeroToPowerOfNonPositive));
+
+        // 0^-2
+        let input = Node::Exp(Box::new(common::zero()), Box::new(-common::two()));
+        let result = eval(&input);
+        assert_eq!(result, Err(EvalError::ZeroToPowerOfNonPositive));
     }
 
     #[test]
