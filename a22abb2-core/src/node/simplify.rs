@@ -2,7 +2,7 @@ use either::Either;
 use num_rational::BigRational;
 use num_traits::{One, Pow, Signed, ToPrimitive, Zero};
 use std::collections::HashMap;
-use std::convert::TryInto;
+use std::convert::{TryInto, TryFrom};
 use std::iter;
 use std::ops::{Add, Mul};
 
@@ -67,7 +67,10 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
                 }
                 fn is_pow_safe(lhs_bits: usize, expon: i32) -> bool {
                     // heuristic to prevent extremely big numbers
-                    expon.abs() <= (2048 >> lhs_bits)
+                    u32::try_from(lhs_bits).ok()
+                        .and_then(|x| 2048i32.checked_shr(x))
+                        .map(|x| expon.abs() <= x)
+                        .unwrap_or(false)
                 }
                 if let Some(int_expon) = ratio_to_i32(&val_b) {
                     // Maybe I don't know how to use the API but I couldn't
