@@ -204,8 +204,8 @@ mod tests {
             let new_tokens: Vec<Token> = Lexer::new(&formatted).map(|x| x.unwrap()).collect();
             let new_root_node = Parser::new(&new_tokens).parse().unwrap();
 
-            let ground_truth = root_node.eval();
-            let result_from_formatted = new_root_node.eval();
+            let ground_truth = root_node.eval().unwrap();
+            let result_from_formatted = new_root_node.eval().unwrap();
             assert!((result_from_formatted.val - ground_truth.val).abs() < 0.001);
             assert_eq!(
                 result_from_formatted.display_base,

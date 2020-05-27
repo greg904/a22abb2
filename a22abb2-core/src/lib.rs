@@ -7,8 +7,4 @@ extern crate num_traits;
 pub mod lexer;
 pub mod node;
 pub mod parser;
-
 mod ratio2flt;
-mod result;
-
-pub use result::EvalResult;

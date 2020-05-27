@@ -80,7 +80,7 @@ pub unsafe extern fn a22abb2_eval(expr: *const c_char) -> *mut EvalResult {
     let mut tokens: Vec<Token> = Vec::new();
     for result in lexer {
         let token = match result {
-            Ok(val) => val,
+            Ok(x) => x,
             Err(_) => return Box::into_raw(Box::new(Err(()))),
         };
         tokens.push(token);
@@ -88,12 +88,15 @@ pub unsafe extern fn a22abb2_eval(expr: *const c_char) -> *mut EvalResult {
     
     let parser = Parser::new(&tokens);
     let root_node = match parser.parse() {
-        Ok(val) => val,
+        Ok(x) => x,
         Err(_) => return Box::into_raw(Box::new(Err(()))),
     };
     let simplified = root_node.simplify();
     let simplified_str = simplified.to_string();
-    let approx = simplified.eval().val;
+    let approx = match simplified.eval() {
+        Ok(x) => x.val,
+        Err(_) => return Box::into_raw(Box::new(Err(()))),
+    };
 
     let r = EvalSuccess {
         expr_simplified: simplified_str,

@@ -405,12 +405,12 @@ mod tests {
         const TRIGO_FUNCS: [&dyn Fn(Box<Node>) -> Node; 3] = [&Node::Sin, &Node::Cos, &Node::Tan];
         for func in &TRIGO_FUNCS {
             let node = func(Box::new(input.clone()));
-            let ground_truth = node.eval();
+            let ground_truth = node.eval().unwrap();
             if ground_truth.val.abs() > 99999999.0 {
                 // impossible tangeant
                 continue;
             }
-            let simplified = simplify(node).eval();
+            let simplified = simplify(node).eval().unwrap();
             assert!(
                 (simplified.val - ground_truth.val).abs() < 0.001,
                 "input: {}, output: {}, expected: {}",

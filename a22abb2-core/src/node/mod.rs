@@ -6,7 +6,6 @@ mod util;
 use num_rational::BigRational;
 use std::ops::*;
 
-use crate::EvalResult;
 use self::eval::*;
 use self::simplify::*;
 use self::util::common;
@@ -42,7 +41,7 @@ pub enum Node {
 
 impl Node {
     /// Approximates the node value.
-    pub fn eval(&self) -> EvalResult {
+    pub fn eval(&self) -> Result<EvalSuccess, EvalError> {
         eval(self)
     }
 
