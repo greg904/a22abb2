@@ -1,6 +1,6 @@
 use either::Either;
 use num_rational::BigRational;
-use num_traits::{One, Signed, Zero};
+use num_traits::{One, Pow, Signed, ToPrimitive, Zero};
 use std::collections::HashMap;
 use std::iter;
 use std::ops::{Add, Mul};
@@ -33,6 +33,43 @@ pub fn simplify(node: Node) -> Node {
                     }
                 }
                 Node::Exp(c, Box::new(new_exp))
+            },
+            // try to do it manually
+            (
+                Node::Num { val: val_a, input_base: input_base_a },
+                Node::Num { val: val_b, input_base: input_base_b },
+            ) => {
+                let b = if val_b.denom().is_one() {
+                    val_b.numer().to_i32()
+                } else if *val_b.denom() == (-1).into() {
+                    val_b.numer().to_i32()
+                        .and_then(|x| x.checked_neg())
+                } else {
+                    None
+                };
+                if let Some(b) = b {
+                    // Maybe I don't know how to use the API but I couldn't
+                    // manage to use the `.pow` method on `BigRational`.
+                    fn my_pow(a: &BigRational, expon: i32) -> BigRational {
+                        // this is handled in another match arm
+                        assert_ne!(expon, 0);
+                        if expon > 0 {
+                            BigRational::new(a.numer().pow(expon as u32), a.denom().pow(expon as u32))
+                        } else {
+                            let pos_expon = expon.abs();
+                            BigRational::new(a.denom().pow(pos_expon as u32), a.numer().pow(pos_expon as u32))
+                        }
+                    }
+                    return Node::Num {
+                        val: my_pow(&val_a, b),
+                        input_base: get_op_result_base(input_base_a, input_base_b),
+                    };
+                }
+                // cannot simplify, so repack the numbers
+                Node::Exp(
+                    Box::new(Node::Num { val: val_a, input_base: input_base_a }),
+                    Box::new(Node::Num { val: val_b, input_base: input_base_b })
+                )
             },
             (Node::Num { val, input_base }, rhs) if is_minus_one(&rhs) => {
                 let (numer, denom) = val.into();
