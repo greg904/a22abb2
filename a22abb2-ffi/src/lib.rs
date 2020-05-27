@@ -91,7 +91,10 @@ pub unsafe extern fn a22abb2_eval(expr: *const c_char) -> *mut EvalResult {
         Ok(x) => x,
         Err(_) => return Box::into_raw(Box::new(Err(()))),
     };
-    let simplified = root_node.simplify();
+    let simplified = match root_node.simplify() {
+        Ok(x) => x,
+        Err(_) => return Box::into_raw(Box::new(Err(()))),
+    };
     let simplified_str = simplified.to_string();
     let approx = match simplified.eval() {
         Ok(x) => x.val,

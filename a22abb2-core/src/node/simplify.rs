@@ -9,20 +9,26 @@ use std::ops::{Add, Mul};
 use super::{ConstKind, Node};
 use super::util::{get_op_result_base, is_minus_one, common};
 
+/// A description of an error that happened while trying to simplify a node.
+#[derive(Debug, PartialEq, Copy, Clone)]
+pub enum SimplifyError {
+    Tan90Or270,
+}
+
 /// Simplifies the node.
-pub fn simplify(node: Node) -> Node {
-    match node {
+pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
+    Ok(match node {
         Node::Const(ConstKind::Tau) => Node::Const(ConstKind::Pi) * common::two(),
-        Node::Sum(children) => simplify_vararg_op(children, true),
-        Node::Product(children) => simplify_vararg_op(children, false),
-        Node::Exp(a, b) => match (simplify(*a), simplify(*b)) {
+        Node::Sum(children) => simplify_vararg_op(children, true)?,
+        Node::Product(children) => simplify_vararg_op(children, false)?,
+        Node::Exp(a, b) => match (simplify(*a)?, simplify(*b)?) {
             // 1^k equals 1
             (Node::Num { ref val, .. }, _) if val.is_one() => common::one(),
             // k^0 equals 1
             (_, Node::Num { ref val, .. }) if val.is_zero() => common::one(),
             // (c^d)^b = c^(d*b)
             (Node::Exp(c, d), b) => {
-                let new_exp = simplify((*d) * b);
+                let new_exp = simplify((*d) * b)?;
                 if let Node::Num { val, input_base } = &new_exp {
                     // We cannot simplify if it changes the display base of the
                     // result!
@@ -30,7 +36,7 @@ pub fn simplify(node: Node) -> Node {
                         .unwrap_or(true);
                     if will_not_change_base && val.is_one() {
                         // 1^k equals 1
-                        return *c;
+                        return Ok(*c);
                     }
                 }
                 Node::Exp(c, Box::new(new_exp))
@@ -63,10 +69,10 @@ pub fn simplify(node: Node) -> Node {
                             BigRational::new(a.denom().pow(pos_expon as u32), a.numer().pow(pos_expon as u32))
                         }
                     }
-                    return Node::Num {
+                    return Ok(Node::Num {
                         val: my_pow(&val_a, int_expon),
                         input_base: get_op_result_base(input_base_a, input_base_b),
-                    };
+                    });
                 } else if let Some(int_base) = ratio_to_i32(&val_a) {
                     if val_b.numer().is_one() {
                         // x^(1/n) = x.nth_root(n)
@@ -78,10 +84,10 @@ pub fn simplify(node: Node) -> Node {
                             let result_undo = result.checked_pow(root)
                                 .expect("should not overflow because original number fitted in u32");
                             if result_undo == int_base {
-                                return Node::Num {
+                                return Ok(Node::Num {
                                     val: BigRational::from_integer(result.into()),
                                     input_base: get_op_result_base(input_base_a, input_base_b),
-                                };
+                                });
                             }
                         }
                     }
@@ -105,7 +111,7 @@ pub fn simplify(node: Node) -> Node {
         },
 
         Node::Sin(ref inner) | Node::Cos(ref inner) | Node::Tan(ref inner) => {
-            let inner_simplified = simplify(*inner.clone());
+            let inner_simplified = simplify(*inner.clone())?;
             if let Some(mut pi_factor) = get_pi_factor(&inner_simplified) {
                 // simplify (2a + b)pi as b*pi with -1 <= b <= 1
                 pi_factor %= BigRational::from_integer(2.into());
@@ -116,32 +122,32 @@ pub fn simplify(node: Node) -> Node {
                 }
                 if pi_factor.is_zero() {
                     return match &node {
-                        Node::Sin(_) => common::zero(),
-                        Node::Cos(_) => common::one(),
-                        Node::Tan(_) => common::zero(),
+                        Node::Sin(_) => Ok(common::zero()),
+                        Node::Cos(_) => Ok(common::one()),
+                        Node::Tan(_) => Ok(common::zero()),
                         _ => unreachable!(),
                     };
                 } else if pi_factor.is_one() {
                     return match &node {
-                        Node::Sin(_) => common::zero(),
-                        Node::Cos(_) => common::minus_one(),
-                        Node::Tan(_) => common::zero(),
+                        Node::Sin(_) => Ok(common::zero()),
+                        Node::Cos(_) => Ok(common::minus_one()),
+                        Node::Tan(_) => Ok(common::zero()),
                         _ => unreachable!(),
                     };
                 } else if *pi_factor.denom() == 2.into() {
                     // could be 1/2 or 3/2
                     return if pi_factor.numer().is_one() {
                         match &node {
-                            Node::Sin(_) => common::one(),
-                            Node::Cos(_) => common::zero(),
-                            Node::Tan(_) => todo!("handle errors gracefully"),
+                            Node::Sin(_) => Ok(common::one()),
+                            Node::Cos(_) => Ok(common::zero()),
+                            Node::Tan(_) => Err(SimplifyError::Tan90Or270),
                             _ => unreachable!(),
                         }
                     } else {
                         match &node {
-                            Node::Sin(_) => common::minus_one(),
-                            Node::Cos(_) => common::zero(),
-                            Node::Tan(_) => todo!("handle errors gracefully"),
+                            Node::Sin(_) => Ok(common::minus_one()),
+                            Node::Cos(_) => Ok(common::zero()),
+                            Node::Tan(_) => Err(SimplifyError::Tan90Or270),
                             _ => unreachable!(),
                         }
                     };
@@ -151,7 +157,7 @@ pub fn simplify(node: Node) -> Node {
                     // 0 < x < pi
                     let is_top = *pi_factor.numer() < 3.into();
 
-                    return match &node {
+                    return Ok(match &node {
                         Node::Sin(_) if is_top => common::three().sqrt() / common::two(),
                         Node::Sin(_) if !is_top => -common::three().sqrt() / common::two(),
                         Node::Cos(_) if !is_left => common::two().inverse(),
@@ -159,14 +165,14 @@ pub fn simplify(node: Node) -> Node {
                         Node::Tan(_) if is_top != is_left => common::three().sqrt(),
                         Node::Tan(_) if is_top == is_left => -common::three().sqrt(),
                         _ => unreachable!(),
-                    };
+                    });
                 } else if *pi_factor.denom() == 4.into() {
                     // pi/2 < x < 3pi/2
                     let is_left = *pi_factor.numer() > 2.into() && *pi_factor.numer() < 6.into();
                     // 0 < x < pi
                     let is_top = *pi_factor.numer() < 4.into();
 
-                    return match &node {
+                    return Ok(match &node {
                         Node::Sin(_) if is_top => common::two().sqrt().inverse(),
                         Node::Sin(_) if !is_top => -common::two().sqrt().inverse(),
                         Node::Cos(_) if !is_left => common::two().sqrt().inverse(),
@@ -174,14 +180,14 @@ pub fn simplify(node: Node) -> Node {
                         Node::Tan(_) if is_top != is_left => common::one(),
                         Node::Tan(_) if is_top == is_left => common::minus_one(),
                         _ => unreachable!(),
-                    };
+                    });
                 } else if *pi_factor.denom() == 6.into() {
                     // pi/2 < x < 3pi/2
                     let is_left = *pi_factor.numer() > 3.into() && *pi_factor.numer() < 9.into();
                     // 0 < x < pi
                     let is_top = *pi_factor.numer() < 6.into();
 
-                    return match &node {
+                    return Ok(match &node {
                         Node::Sin(_) if is_top => common::two().inverse(),
                         Node::Sin(_) if !is_top => -common::two().inverse(),
                         Node::Cos(_) if !is_left => common::three().sqrt() / common::two(),
@@ -189,7 +195,7 @@ pub fn simplify(node: Node) -> Node {
                         Node::Tan(_) if is_top != is_left => common::three().sqrt().inverse(),
                         Node::Tan(_) if is_top == is_left => -common::three().sqrt().inverse(),
                         _ => unreachable!(),
-                    };
+                    });
                 }
             }
             // failed to simplify with common angle
@@ -203,7 +209,7 @@ pub fn simplify(node: Node) -> Node {
 
         // fallback to doing nothing
         _ => node,
-    }
+    })
 }
 
 fn get_pi_factor(node: &Node) -> Option<BigRational> {
@@ -316,13 +322,14 @@ where I: IntoIterator<Item = Node> {
     result
 }
 
-fn simplify_vararg_op<I>(children: I, is_sum: bool) -> Node
+fn simplify_vararg_op<I>(children: I, is_sum: bool) -> Result<Node, SimplifyError>
 where I: IntoIterator<Item = Node> {
-    let children = deep_flatten_children(children, is_sum)
-        .into_iter()
-        .map(&simplify);
+    let children = deep_flatten_children(children, is_sum);
+    let children: Vec<Node> = children.into_iter()
+        .map(simplify)
+        .collect::<Result<Vec<Node>, _>>()?;
     let acc_f = if is_sum { Add::add } else { Mul::mul };
-    let children = group_and_fold_numbers(children, acc_f);
+    let children = group_and_fold_numbers(children.into_iter(), acc_f);
 
     // in the case of multiplication, this is children by exponent
     let mut children_by_factors: HashMap<Node, Vec<Node>> = HashMap::new();
@@ -408,7 +415,7 @@ where I: IntoIterator<Item = Node> {
         .collect::<Vec<_>>();
 
     // if there is only one node, return it instead of a list to evaluate
-    match children.len() {
+    Ok(match children.len() {
         0 => Node::Num {
             // identity
             val: if is_sum { Zero::zero() } else { One::one() },
@@ -417,7 +424,7 @@ where I: IntoIterator<Item = Node> {
         1 => children.into_iter().next().unwrap(),
         _ if is_sum => Node::Sum(children),
         _ => Node::Product(children),
-    }
+    })
 }
 
 fn fold_helper(x: Node, factor: Node, is_sum: bool) -> Node {
@@ -451,7 +458,7 @@ mod tests {
         };
         // sqrt(256) = 16
         assert_eq!(
-            simplify(num.clone().sqrt()),
+            simplify(num.clone().sqrt()).unwrap(),
             Node::Num {
                 val: BigRational::from_integer(16.into()),
                 input_base: Some(8),
@@ -459,10 +466,10 @@ mod tests {
         );
         // we cannot simplify 256^(1/3)
         assert_eq!(
-            simplify(num.clone().cbrt()),
+            simplify(num.clone().cbrt()).unwrap(),
             Node::Exp(
                 Box::new(num.clone()),
-                Box::new(simplify(common::three().inverse())),
+                Box::new(simplify(common::three().inverse()).unwrap()),
             ),
         );
         // 256^(1/4) = 4
@@ -473,7 +480,7 @@ mod tests {
                     val: BigRational::from_integer(4.into()),
                     input_base: Some(10),
                 }.inverse())
-            )),
+            )).unwrap(),
             Node::Num {
                 val: BigRational::from_integer(4.into()),
                 input_base: Some(8),
@@ -506,7 +513,7 @@ mod tests {
                 // impossible tangeant
                 continue;
             }
-            let simplified = simplify(node).eval().unwrap();
+            let simplified = simplify(node).unwrap().eval().unwrap();
             assert!(
                 (simplified.val - ground_truth.val).abs() < 0.001,
                 "input: {}, output: {}, expected: {}",

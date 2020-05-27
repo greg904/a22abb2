@@ -46,7 +46,7 @@ impl Node {
     }
 
     /// Simplifies the node.
-    pub fn simplify(self) -> Node {
+    pub fn simplify(self) -> Result<Node, SimplifyError> {
         simplify(self)
     }
 
