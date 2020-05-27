@@ -26,7 +26,7 @@ namespace A22abb2
         {
             if (e.Key == VirtualKey.Enter)
             {
-                this.ViewModel.CommitIfValid();
+                this.ViewModel.CommitIfNotEmpty();
                 e.Handled = true;
             }
         }
@@ -60,10 +60,9 @@ namespace A22abb2
             this.History.Add(this.CurrentCalculation);
         }
 
-        public void CommitIfValid()
+        public void CommitIfNotEmpty()
         {
-            if (this.CurrentCalculation.HasFailed ||
-                this.CurrentCalculation.HistoryVisibility == Visibility.Collapsed)
+            if (this.CurrentCalculation.IsEmpty)
             {
                 return;
             }
@@ -94,7 +93,7 @@ namespace A22abb2
 
         public void Execute(object parameter)
         {
-            this.viewModel.CommitIfValid();
+            this.viewModel.CommitIfNotEmpty();
         }
     }
 }

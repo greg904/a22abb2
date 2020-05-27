@@ -93,15 +93,15 @@
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="local:CalculationViewModel">
                     <StackPanel Orientation="Vertical"
-                                Visibility="{x:Bind HistoryVisibility, Mode=OneWay}"
                                 Padding="14,0,14,24">
                         <TextBlock FontSize="24"
                                    FontWeight="Bold"
-                                   Text="{x:Bind Expression, Mode=OneWay}"
+                                   Text="{x:Bind ExpressionText, Mode=OneWay}"
                                    IsTextSelectionEnabled="True"
                                    HorizontalAlignment="Right" />
                         <TextBlock FontSize="20"
                                    Text="{x:Bind ResultText, Mode=OneWay}"
+                                   Visibility="{x:Bind ResultVisibility, Mode=OneWay}"
                                    IsTextSelectionEnabled="True"
                                    HorizontalAlignment="Right" />
                     </StackPanel>

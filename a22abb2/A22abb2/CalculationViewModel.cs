@@ -33,22 +33,37 @@ namespace A22abb2
                 this.expression = value;
                 this.OnPropertyChanged(nameof(Expression));
 
-                this.UpdateResult();
+                this.Update();
             }
         }
 
-        private Visibility historyVisibility = Visibility.Collapsed;
-        public Visibility HistoryVisibility
+        private string expressionText;
+        public string ExpressionText
         {
-            get => this.historyVisibility;
+            get => this.expressionText;
             private set
             {
-                if (this.historyVisibility == value)
+                if (this.expressionText == value)
                 {
                     return;
                 }
-                this.historyVisibility = value;
-                this.OnPropertyChanged(nameof(HistoryVisibility));
+                this.expressionText = value;
+                this.OnPropertyChanged(nameof(ExpressionText));
+            }
+        }
+
+        private Visibility resultVisibility;
+        public Visibility ResultVisibility
+        {
+            get => this.resultVisibility;
+            private set
+            {
+                if (this.resultVisibility == value)
+                {
+                    return;
+                }
+                this.resultVisibility = value;
+                this.OnPropertyChanged(nameof(ResultVisibility));
             }
         }
 
@@ -67,38 +82,48 @@ namespace A22abb2
             }
         }
 
-        private bool hasFailed;
-        public bool HasFailed
+        private bool isEmpty;
+        public bool IsEmpty
         {
-            get => this.hasFailed;
+            get => this.isEmpty;
             private set
             {
-                if (this.hasFailed == value)
+                if (this.isEmpty == value)
                 {
                     return;
                 }
-                this.hasFailed = value;
-                this.OnPropertyChanged(nameof(HasFailed));
+                this.isEmpty = value;
+                this.OnPropertyChanged(nameof(IsEmpty));
             }
         }
 
-        private void UpdateResult()
+        public CalculationViewModel()
+        {
+            this.Update();
+        }
+
+        private void Update()
         {
             var exprTrim = this.expression.Trim();
             if (exprTrim == "")
             {
-                this.HistoryVisibility = Visibility.Collapsed;
+                this.ExpressionText = "(empty)";
+                this.ResultVisibility = Visibility.Collapsed;
+                this.IsEmpty = true;
                 return;
+            }
+            else
+            {
+                this.ExpressionText = exprTrim;
+                this.IsEmpty = false;
             }
 
             // TODO: do not call this on the UI thread
             var evalResult = Ffi.Eval(exprTrim);
-
-            this.HasFailed = evalResult.HasFailed;
-            if (this.HasFailed)
+            if (evalResult.HasFailed)
             {
                 this.ResultText = ResourceLoader.GetForCurrentView().GetString("CalculationFailedText");
-                this.HistoryVisibility = Visibility.Visible;
+                this.ResultVisibility = Visibility.Visible;
                 return;
             }
 
@@ -119,12 +144,12 @@ namespace A22abb2
 
             if (resultParts.Count > 0)
             {
-                this.HistoryVisibility = Visibility.Visible;
                 this.ResultText = string.Join("\n", resultParts);
+                this.ResultVisibility = Visibility.Visible;
             }
             else
             {
-                this.HistoryVisibility = Visibility.Collapsed;
+                this.ResultVisibility = Visibility.Collapsed;
             }
         }
 
