@@ -101,13 +101,7 @@
                                    IsTextSelectionEnabled="True"
                                    HorizontalAlignment="Right" />
                         <TextBlock FontSize="20"
-                                   Text="{x:Bind SimplifiedExpression, Mode=OneWay}"
-                                   Visibility="{x:Bind SimplificationVisibility, Mode=OneWay}"
-                                   IsTextSelectionEnabled="True"
-                                   HorizontalAlignment="Right" />
-                        <TextBlock FontSize="20"
-                                   Text="{x:Bind Approximation, Mode=OneWay}"
-                                   Visibility="{x:Bind ApproximationVisibility, Mode=OneWay}"
+                                   Text="{x:Bind ResultText, Mode=OneWay}"
                                    IsTextSelectionEnabled="True"
                                    HorizontalAlignment="Right" />
                     </StackPanel>

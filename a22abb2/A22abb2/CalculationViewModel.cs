@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text.RegularExpressions;
 using Windows.ApplicationModel.Resources;
 using Windows.UI.Xaml;
@@ -9,99 +10,114 @@ namespace A22abb2
     {
         private static readonly Regex WhitespaceRegex = new Regex(@"\s+");
 
-        private string expression = "";
-
-        private Ffi.EvalResult result;
-
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public Visibility HistoryVisibility { get; private set; } = Visibility.Collapsed;
-        public Visibility SimplificationVisibility { get; private set; } = Visibility.Collapsed;
-        public Visibility ApproximationVisibility { get; private set; } = Visibility.Collapsed;
-
+        private string expression = "";
         public string Expression
         {
             get => this.expression;
             set
             {
-                if (this.expression != value)
+                if (this.expression == value)
                 {
-                    this.expression = value;
-                    this.OnPropertyChanged(nameof(Expression));
-
-                    // TODO: do not call this on the UI thread
-                    var newResult = Ffi.Eval(this.expression.Trim());
-                    if (!this.result.Equals(newResult))
-                    {
-                        this.result = newResult;
-                        this.OnPropertyChanged(nameof(HasFailed));
-                        this.OnPropertyChanged(nameof(Approximation));
-                        this.OnPropertyChanged(nameof(SimplifiedExpression));
-                    }
-
-                    var original = WhitespaceRegex.Replace(this.Expression, ""); ;
-                    var simplified = this.result.SimplifiedExpression == null ?
-                        null : WhitespaceRegex.Replace(this.result.SimplifiedExpression, "");
-                    var approx = this.result.HasFailed ? null : this.result.Approximation.ToString();
-
-                    bool simplVisible;
-                    bool approxVisible;
-                    if (original == "")
-                    {
-                        simplVisible = false;
-                        approxVisible = false;
-                    }
-                    else
-                    {
-                        // only show if there actually was a simplification
-                        simplVisible = simplified != null && !original.Equals(simplified);
-                        // only show if there actually was a calculation or if there was an error
-                        approxVisible = approx == null || !approx.Equals(simplified);
-                    }
-
-                    var historyVisible = simplVisible || approxVisible;
-                    var visibility1 = historyVisible ? Visibility.Visible : Visibility.Collapsed;
-                    if (this.HistoryVisibility != visibility1)
-                    {
-                        this.HistoryVisibility = visibility1;
-                        this.OnPropertyChanged(nameof(HistoryVisibility));
-                    }
-                    var visibility2 = simplVisible ? Visibility.Visible : Visibility.Collapsed;
-                    if (this.SimplificationVisibility != visibility2)
-                    {
-                        this.SimplificationVisibility = visibility2;
-                        this.OnPropertyChanged(nameof(SimplificationVisibility));
-                    }
-                    var visibility3 = approxVisible ? Visibility.Visible : Visibility.Collapsed;
-                    if (this.ApproximationVisibility != visibility3)
-                    {
-                        this.ApproximationVisibility = visibility3;
-                        this.OnPropertyChanged(nameof(ApproximationVisibility));
-                    }
+                    return;
                 }
+                this.expression = value;
+                this.OnPropertyChanged(nameof(Expression));
+
+                this.UpdateResult();
             }
         }
 
+        private Visibility historyVisibility = Visibility.Collapsed;
+        public Visibility HistoryVisibility
+        {
+            get => this.historyVisibility;
+            private set
+            {
+                if (this.historyVisibility == value)
+                {
+                    return;
+                }
+                this.historyVisibility = value;
+                this.OnPropertyChanged(nameof(HistoryVisibility));
+            }
+        }
+
+        private string resultText;
+        public string ResultText
+        {
+            get => this.resultText;
+            private set
+            {
+                if (this.resultText == value)
+                {
+                    return;
+                }
+                this.resultText = value;
+                this.OnPropertyChanged(nameof(ResultText));
+            }
+        }
+
+        private bool hasFailed;
         public bool HasFailed
         {
-            get => this.result.HasFailed;
-        }
-
-        public string Approximation
-        {
-            get
+            get => this.hasFailed;
+            private set
             {
-                if (this.result.HasFailed)
+                if (this.hasFailed == value)
                 {
-                    return ResourceLoader.GetForCurrentView().GetString("CalculationFailedText");
+                    return;
                 }
-                return $"≈ {this.result.Approximation}";
+                this.hasFailed = value;
+                this.OnPropertyChanged(nameof(HasFailed));
             }
         }
 
-        public string SimplifiedExpression
+        private void UpdateResult()
         {
-            get => this.result.SimplifiedExpression == null ? "" : $"= {this.result.SimplifiedExpression}";
+            var exprTrim = this.expression.Trim();
+            if (exprTrim == "")
+            {
+                this.HistoryVisibility = Visibility.Collapsed;
+                return;
+            }
+
+            // TODO: do not call this on the UI thread
+            var evalResult = Ffi.Eval(exprTrim);
+
+            this.HasFailed = evalResult.HasFailed;
+            if (this.HasFailed)
+            {
+                this.ResultText = ResourceLoader.GetForCurrentView().GetString("CalculationFailedText");
+                this.HistoryVisibility = Visibility.Visible;
+                return;
+            }
+
+            // Only show the parts that are useful, which are the parts that
+            // are not the same as the expression that the user typed.
+            var expressionNormalized = WhitespaceRegex.Replace(this.expression, "");
+            var resultParts = new List<string>();
+            var simplificationNormalized = WhitespaceRegex.Replace(evalResult.SimplifiedExpression, "");
+            if (!expressionNormalized.Equals(simplificationNormalized))
+            {
+                resultParts.Add($"= {evalResult.SimplifiedExpression}");
+            }
+            var approximationNormalized = WhitespaceRegex.Replace(evalResult.Approximation.ToString(), "");
+            if (!expressionNormalized.Equals(approximationNormalized) && !simplificationNormalized.Equals(approximationNormalized))
+            {
+                resultParts.Add($"≈ {evalResult.Approximation}");
+            }
+
+            if (resultParts.Count > 0)
+            {
+                this.HistoryVisibility = Visibility.Visible;
+                this.ResultText = string.Join("\n", resultParts);
+            }
+            else
+            {
+                this.HistoryVisibility = Visibility.Collapsed;
+            }
         }
 
         private void OnPropertyChanged(string name)
