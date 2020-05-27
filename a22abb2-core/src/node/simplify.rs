@@ -1,5 +1,4 @@
 use either::Either;
-use num_integer::Roots;
 use num_rational::BigRational;
 use num_traits::{One, Pow, Signed, ToPrimitive, Zero};
 use std::collections::HashMap;
@@ -80,26 +79,38 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
                             )
                         }
                     }
-                    return Ok(Node::Num {
-                        val: my_pow(&val_a, int_expon),
-                        input_base: get_op_result_base(input_base_a, input_base_b),
-                    });
-                } else if let Some(int_base) = ratio_to_i32(&val_a) {
-                    if val_b.numer().is_one() {
-                        // x^(1/n) = x.nth_root(n)
-                        if let Some(root) = val_b.denom().to_u32() {
-                            // Check if doing and undoing the root changes the
-                            // output. If it's the case, then it's because we're
-                            // limited by precision and we won't simplify.
-                            let result = int_base.nth_root(root);
-                            let result_undo = result.checked_pow(root).expect(
-                                "should not overflow because original number fitted in u32",
-                            );
-                            if result_undo == int_base {
-                                return Ok(Node::Num {
-                                    val: BigRational::from_integer(result.into()),
-                                    input_base: get_op_result_base(input_base_a, input_base_b),
-                                });
+                    // heuristic to prevent extremely big numbers
+                    let lhs_size = val_a.denom().bits() + val_a.numer().bits();
+                    let is_safe = int_expon.abs() <= (2048 >> lhs_size);
+                    if is_safe {
+                        return Ok(Node::Num {
+                            val: my_pow(&val_a, int_expon),
+                            input_base: get_op_result_base(input_base_a, input_base_b),
+                        });
+                    }
+                } else {
+                    let int_base = if val_a.denom().is_one() {
+                        Some(val_a.numer().clone())
+                    } else if *val_a.denom() == (-1).into() {
+                        Some(-val_a.numer())
+                    } else {
+                        None
+                    };
+                    if let Some(int_base) = int_base {
+                        if val_b.numer().is_one() {
+                            // x^(1/n) = x.nth_root(n)
+                            if let Some(root) = val_b.denom().to_u32() {
+                                // Check if doing and undoing the root changes the
+                                // output. If it's the case, then it's because we're
+                                // limited by precision and we won't simplify.
+                                let result = int_base.nth_root(root);
+                                let result_undo = result.pow(root);
+                                if result_undo == int_base {
+                                    return Ok(Node::Num {
+                                        val: BigRational::from_integer(result.into()),
+                                        input_base: get_op_result_base(input_base_a, input_base_b),
+                                    });
+                                }
                             }
                         }
                     }
