@@ -2,6 +2,7 @@ use either::Either;
 use num_rational::BigRational;
 use num_traits::{One, Pow, Signed, ToPrimitive, Zero};
 use std::collections::HashMap;
+use std::convert::TryInto;
 use std::iter;
 use std::ops::{Add, Mul};
 
@@ -60,6 +61,10 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
                         None
                     }
                 }
+                fn is_pow_safe(lhs_bits: usize, expon: i32) -> bool {
+                    // heuristic to prevent extremely big numbers
+                    expon.abs() <= (2048 >> lhs_bits)
+                }
                 if let Some(int_expon) = ratio_to_i32(&val_b) {
                     // Maybe I don't know how to use the API but I couldn't
                     // manage to use the `.pow` method on `BigRational`.
@@ -79,35 +84,51 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
                             )
                         }
                     }
-                    // heuristic to prevent extremely big numbers
-                    let lhs_size = val_a.denom().bits() + val_a.numer().bits();
-                    let is_safe = int_expon.abs() <= (2048 >> lhs_size);
-                    if is_safe {
+                    let lhs_bits = val_a.denom().bits() + val_a.numer().bits();
+                    if is_pow_safe(lhs_bits, int_expon) {
                         return Ok(Node::Num {
                             val: my_pow(&val_a, int_expon),
                             input_base: get_op_result_base(input_base_a, input_base_b),
                         });
                     }
                 } else {
-                    let int_base = if val_a.denom().is_one() {
+                    let lhs = if val_a.denom().is_one() {
                         Some(val_a.numer().clone())
                     } else if *val_a.denom() == (-1).into() {
                         Some(-val_a.numer())
                     } else {
                         None
                     };
-                    if let Some(int_base) = int_base {
-                        if val_b.numer().is_one() {
-                            // x^(1/n) = x.nth_root(n)
-                            if let Some(root) = val_b.denom().to_u32() {
-                                // Check if doing and undoing the root changes the
-                                // output. If it's the case, then it's because we're
-                                // limited by precision and we won't simplify.
-                                let result = int_base.nth_root(root);
-                                let result_undo = result.pow(root);
-                                if result_undo == int_base {
+                    let rhs_inv = if val_b.numer().is_one() {
+                        Some(val_b.denom().clone())
+                    } else if *val_b.numer() == (-1).into() {
+                        Some(-val_b.denom())
+                    } else {
+                        None
+                    };
+                    if let Some(lhs) = lhs {
+                        if let Some(rhs_inv) = rhs_inv.as_ref().and_then(ToPrimitive::to_i32) {
+                            // To compute x^(-1/n), we will compute x^(1/n) and
+                            // take the inverse of it.
+                            let root = rhs_inv.abs();
+                            let root_u32 = root.try_into().unwrap();
+
+                            // Check if doing and undoing the root changes
+                            // the output. If it's the case, then it's 
+                            // because we're limited by precision and we
+                            // won't simplify.
+                            let result = lhs.nth_root(root_u32);
+                            if is_pow_safe(result.bits(), root) {
+                                let result_undo = result.pow(root_u32);
+                                if result_undo == lhs {
+                                    // see comment above about x^(-1/n)
+                                    let result = if rhs_inv.is_negative() {
+                                        BigRational::new(One::one(), result.into())
+                                    } else {
+                                        BigRational::from_integer(result.into())
+                                    };
                                     return Ok(Node::Num {
-                                        val: BigRational::from_integer(result.into()),
+                                        val: result,
                                         input_base: get_op_result_base(input_base_a, input_base_b),
                                     });
                                 }
