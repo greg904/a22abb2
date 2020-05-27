@@ -34,6 +34,10 @@ where
     for n in nodes {
         let eval = n.eval()?;
         acc = f(acc, eval.val);
+        if acc.is_nan() {
+            // multiplied inf*0, probably because there was a very big number
+            acc = 0.0;
+        }
         acc_base = get_op_result_base(acc_base, eval.display_base);
     }
     Ok(EvalSuccess {
