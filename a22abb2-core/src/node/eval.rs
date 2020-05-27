@@ -81,12 +81,12 @@ pub fn eval(node: &Node) -> Result<EvalSuccess, EvalError> {
             if b_is_zero {
                 return Ok(EvalSuccess {
                     val: 1.0,
-                    display_base: a.display_base,
+                    display_base: None,
                 });
             } else if b_is_one {
                 return Ok(EvalSuccess {
                     val: a.val,
-                    display_base: a.display_base,
+                    display_base: None,
                 });
             } else if b_is_minus_one {
                 return Ok(EvalSuccess {
