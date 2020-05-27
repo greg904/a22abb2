@@ -125,6 +125,78 @@
     <value>(error)</value>
     <comment>The text displayed instead of the result when the calculation failed because the user entered an invalid expression</comment>
   </data>
+  <data name="ExplanationPart1.Text" xml:space="preserve">
+    <value>Eso es un programa para hacer y simplificar cálculos.</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart10.Text" xml:space="preserve">
+    <value>y</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart11.Text" xml:space="preserve">
+    <value>y las funciones de la raíz</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart12.Text" xml:space="preserve">
+    <value>y</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart13.Text" xml:space="preserve">
+    <value>Se puede usar las constantes</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart14.Text" xml:space="preserve">
+    <value>y</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart15.Text" xml:space="preserve">
+    <value>El resultado exacto está precedido por un signo = (igual). La aproximación está precedida por un signo ≈ (aproximadamente igual a).</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart16.Text" xml:space="preserve">
+    <value>Pruebe un cálculo complejo como</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart17.Text" xml:space="preserve">
+    <value>para ver cómo el programa funciona.</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart2.Text" xml:space="preserve">
+    <value>En la parte inferior de la ventana, hay una sección para introducir un nuevo cálculo.</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart3.Text" xml:space="preserve">
+    <value>Los números se pueden escribir en base decimal, base hexadecimal</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart4.Text" xml:space="preserve">
+    <value>base octal</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart5.Text" xml:space="preserve">
+    <value>o base binaria</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart6.Text" xml:space="preserve">
+    <value>Se puede usar los operadores básicos</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart7.Text" xml:space="preserve">
+    <value>y</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart8.Text" xml:space="preserve">
+    <value>para la exponenciación</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart9.Text" xml:space="preserve">
+    <value>las funciones trigonométricas</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExpressionEmptyText" xml:space="preserve">
+    <value>(vacío)</value>
+    <comment>The text displayed instead of the expression when it is empty</comment>
+  </data>
   <data name="HistoryHeader.Text" xml:space="preserve">
     <value>Historial</value>
     <comment>The text for the history section's header</comment>

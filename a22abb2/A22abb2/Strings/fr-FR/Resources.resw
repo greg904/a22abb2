@@ -125,6 +125,78 @@
     <value>(erreur)</value>
     <comment>The text displayed instead of the result when the calculation failed because the user entered an invalid expression</comment>
   </data>
+  <data name="ExplanationPart1.Text" xml:space="preserve">
+    <value>Ceci est un outil pour faire et simplifier des calculs.</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart10.Text" xml:space="preserve">
+    <value>et</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart11.Text" xml:space="preserve">
+    <value>et les fonctions racines</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart12.Text" xml:space="preserve">
+    <value>et</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart13.Text" xml:space="preserve">
+    <value>Utilisez les constantes remarquables comme</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart14.Text" xml:space="preserve">
+    <value>et</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart15.Text" xml:space="preserve">
+    <value>Le résultat exact est précédé d'un signe = (égal). L'approximation est précédée d'un signe ≈ (approximativement égal à).</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart16.Text" xml:space="preserve">
+    <value>Essayez un calcul complexe tel que</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart17.Text" xml:space="preserve">
+    <value>pour comprendre le fonctionnement du logiciel.</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart2.Text" xml:space="preserve">
+    <value>En bas de la fenêtre, il y a une section pour rentrer un nouveau calcul.</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart3.Text" xml:space="preserve">
+    <value>Écrivez des nombres en base décimale, hexadécimale</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart4.Text" xml:space="preserve">
+    <value>octale</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart5.Text" xml:space="preserve">
+    <value>ou binaire</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart6.Text" xml:space="preserve">
+    <value>Utilisez les opérateurs basiques</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart7.Text" xml:space="preserve">
+    <value>et</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart8.Text" xml:space="preserve">
+    <value>pour les exposants</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart9.Text" xml:space="preserve">
+    <value>les fonctions trigonométriques</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExpressionEmptyText" xml:space="preserve">
+    <value>(vide)</value>
+    <comment>The text displayed instead of the expression when it is empty</comment>
+  </data>
   <data name="HistoryHeader.Text" xml:space="preserve">
     <value>Historique</value>
     <comment>The text for the history section's header</comment>

@@ -107,7 +107,7 @@ namespace A22abb2
             var exprTrim = this.expression.Trim();
             if (exprTrim == "")
             {
-                this.ExpressionText = "(empty)";
+                this.ExpressionText = ResourceLoader.GetForCurrentView().GetString("ExpressionEmptyText");
                 this.ResultVisibility = Visibility.Collapsed;
                 this.IsEmpty = true;
                 return;

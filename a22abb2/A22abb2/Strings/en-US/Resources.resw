@@ -125,6 +125,78 @@
     <value>(error)</value>
     <comment>The text displayed instead of the result when the calculation failed because the user entered an invalid expression</comment>
   </data>
+  <data name="ExplanationPart1.Text" xml:space="preserve">
+    <value>This is a tool to do calculations and simplifications.</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart10.Text" xml:space="preserve">
+    <value>and</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart11.Text" xml:space="preserve">
+    <value>and root functions</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart12.Text" xml:space="preserve">
+    <value>and</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart13.Text" xml:space="preserve">
+    <value>Use common constants like</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart14.Text" xml:space="preserve">
+    <value>and</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart15.Text" xml:space="preserve">
+    <value>The exact result starts with an = (equals) sign. The approximation starts with an ≈ (approximately equals to) sign.</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart16.Text" xml:space="preserve">
+    <value>Try a complex expression like</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart17.Text" xml:space="preserve">
+    <value>to see how it works.</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart2.Text" xml:space="preserve">
+    <value>At the bottom of the window, there is a section to input a new calculation.</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart3.Text" xml:space="preserve">
+    <value>Write numbers in decimal, hexadecimal</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart4.Text" xml:space="preserve">
+    <value>octal</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart5.Text" xml:space="preserve">
+    <value>or binary</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart6.Text" xml:space="preserve">
+    <value>Use basic operators</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart7.Text" xml:space="preserve">
+    <value>and</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart8.Text" xml:space="preserve">
+    <value>for exponents</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExplanationPart9.Text" xml:space="preserve">
+    <value>trigonometry functions</value>
+    <comment>The text for a part of the explanation text at the top of the page</comment>
+  </data>
+  <data name="ExpressionEmptyText" xml:space="preserve">
+    <value>(empty)</value>
+    <comment>The text displayed instead of the expression when it is empty</comment>
+  </data>
   <data name="HistoryHeader.Text" xml:space="preserve">
     <value>History</value>
     <comment>The text for the history section's header</comment>
