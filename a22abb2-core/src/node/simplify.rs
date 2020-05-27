@@ -1,4 +1,5 @@
 use either::Either;
+use num_integer::Roots;
 use num_rational::BigRational;
 use num_traits::{One, Pow, Signed, ToPrimitive, Zero};
 use std::collections::HashMap;
@@ -39,15 +40,17 @@ pub fn simplify(node: Node) -> Node {
                 Node::Num { val: val_a, input_base: input_base_a },
                 Node::Num { val: val_b, input_base: input_base_b },
             ) => {
-                let b = if val_b.denom().is_one() {
-                    val_b.numer().to_i32()
-                } else if *val_b.denom() == (-1).into() {
-                    val_b.numer().to_i32()
-                        .and_then(|x| x.checked_neg())
-                } else {
-                    None
-                };
-                if let Some(b) = b {
+                fn ratio_to_i32(ratio: &BigRational) -> Option<i32> {
+                    if ratio.denom().is_one() {
+                        ratio.numer().to_i32()
+                    } else if *ratio.denom() == (-1).into() {
+                        ratio.numer().to_i32()
+                            .and_then(|x| x.checked_neg())
+                    } else {
+                        None
+                    }
+                }
+                if let Some(int_expon) = ratio_to_i32(&val_b) {
                     // Maybe I don't know how to use the API but I couldn't
                     // manage to use the `.pow` method on `BigRational`.
                     fn my_pow(a: &BigRational, expon: i32) -> BigRational {
@@ -61,9 +64,27 @@ pub fn simplify(node: Node) -> Node {
                         }
                     }
                     return Node::Num {
-                        val: my_pow(&val_a, b),
+                        val: my_pow(&val_a, int_expon),
                         input_base: get_op_result_base(input_base_a, input_base_b),
                     };
+                } else if let Some(int_base) = ratio_to_i32(&val_a) {
+                    if val_b.numer().is_one() {
+                        // x^(1/n) = x.nth_root(n)
+                        if let Some(root) = val_b.denom().to_u32() {
+                            // Check if doing and undoing the root changes the
+                            // output. If it's the case, then it's because we're
+                            // limited by precision and we won't simplify.
+                            let result = int_base.nth_root(root);
+                            let result_undo = result.checked_pow(root)
+                                .expect("should not overflow because original number fitted in u32");
+                            if result_undo == int_base {
+                                return Node::Num {
+                                    val: BigRational::from_integer(result.into()),
+                                    input_base: get_op_result_base(input_base_a, input_base_b),
+                                };
+                            }
+                        }
+                    }
                 }
                 // cannot simplify, so repack the numbers
                 Node::Exp(
@@ -421,6 +442,44 @@ fn node_factor_heuristic(node: &Node) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn it_simplifies_roots() {
+        let num = Node::Num {
+            val: BigRational::from_integer(256.into()),
+            input_base: Some(8),
+        };
+        // sqrt(256) = 16
+        assert_eq!(
+            simplify(num.clone().sqrt()),
+            Node::Num {
+                val: BigRational::from_integer(16.into()),
+                input_base: Some(8),
+            }
+        );
+        // we cannot simplify 256^(1/3)
+        assert_eq!(
+            simplify(num.clone().cbrt()),
+            Node::Exp(
+                Box::new(num.clone()),
+                Box::new(simplify(common::three().inverse())),
+            ),
+        );
+        // 256^(1/4) = 4
+        assert_eq!(
+            simplify(Node::Exp(
+                Box::new(num),
+                Box::new(Node::Num {
+                    val: BigRational::from_integer(4.into()),
+                    input_base: Some(10),
+                }.inverse())
+            )),
+            Node::Num {
+                val: BigRational::from_integer(4.into()),
+                input_base: Some(8),
+            }
+        );
+    }
 
     #[test]
     fn it_simplifies_trigonometric_functions_with_common_angles() {

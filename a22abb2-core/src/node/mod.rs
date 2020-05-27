@@ -58,6 +58,10 @@ impl Node {
         Node::Exp(Box::new(self), Box::new(common::two().inverse()))
     }
 
+    pub fn cbrt(self) -> Node {
+        Node::Exp(Box::new(self), Box::new(common::three().inverse()))
+    }
+
     pub fn sin(self) -> Node {
         Node::Sin(Box::new(self))
     }
