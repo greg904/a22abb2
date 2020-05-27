@@ -18,6 +18,7 @@ pub enum IdentKind {
     Cos,
     Tan,
     Sqrt,
+    Cbrt,
 }
 
 impl FromStr for IdentKind {
@@ -32,6 +33,7 @@ impl FromStr for IdentKind {
             "cos" | "cosine" => IdentKind::Cos,
             "tan" | "tangent" => IdentKind::Tan,
             "sqrt" => IdentKind::Sqrt,
+            "cbrt" => IdentKind::Cbrt,
             _ => return Err(()),
         })
     }

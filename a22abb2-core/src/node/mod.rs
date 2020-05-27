@@ -1,7 +1,7 @@
 mod display;
 mod eval;
 mod simplify;
-mod util;
+pub(crate) mod util;
 
 use num_rational::BigRational;
 use std::ops::*;

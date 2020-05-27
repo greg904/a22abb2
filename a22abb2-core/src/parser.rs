@@ -3,6 +3,8 @@ use super::node::{ConstKind, Node};
 
 use num_rational::BigRational;
 
+use crate::node::util::common;
+
 #[derive(PartialEq, Eq)]
 enum StopPolicy {
     IfWeaker(Power),
@@ -65,14 +67,8 @@ impl<'a> Parser<'a> {
                         IdentKind::Sin => Node::Sin(param),
                         IdentKind::Cos => Node::Cos(param),
                         IdentKind::Tan => Node::Tan(param),
-                        IdentKind::Sqrt => {
-                            let one_half = BigRational::new(1.into(), 2.into());
-                            let one_half = Box::new(Node::Num {
-                                val: one_half,
-                                input_base: None,
-                            });
-                            Node::Exp(param, one_half)
-                        }
+                        IdentKind::Sqrt => Node::Exp(param, Box::new(common::two().inverse())),
+                        IdentKind::Cbrt => Node::Exp(param, Box::new(common::three().inverse())),
                         _ => unreachable!(),
                     }
                 }
