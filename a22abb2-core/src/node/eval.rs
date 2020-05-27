@@ -23,6 +23,7 @@ pub struct EvalSuccess {
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum EvalError {
     ZeroToPowerOfNonPositive,
+    ComplexRoot,
     Tan90Or270,
 }
 
@@ -93,8 +94,12 @@ pub fn eval(node: &Node) -> Result<EvalSuccess, EvalError> {
                     display_base: a.display_base,
                 });
             }
+            let result = a.val.powf(b.val);
+            if result.is_nan() {
+                return Err(EvalError::ComplexRoot);
+            }
             EvalSuccess {
-                val: a.val.powf(b.val),
+                val: result,
                 display_base: get_op_result_base(a.display_base, b.display_base),
             }
         }
@@ -249,7 +254,7 @@ mod tests {
     use crate::node::util::common;
 
     #[test]
-    fn it_errors_with_pow_0_to_power_of_non_positive() {
+    fn it_errors_with_0_to_power_of_non_positive() {
         // 0^0
         let input = Node::Exp(Box::new(common::zero()), Box::new(common::zero()));
         let result = eval(&input);
@@ -259,6 +264,14 @@ mod tests {
         let input = Node::Exp(Box::new(common::zero()), Box::new(-common::two()));
         let result = eval(&input);
         assert_eq!(result, Err(EvalError::ZeroToPowerOfNonPositive));
+    }
+
+    #[test]
+    fn it_errors_with_sqrt_of_minus_one() {
+        // sqrt(-1)
+        let input = common::minus_one().sqrt();
+        let result = eval(&input);
+        assert_eq!(result, Err(EvalError::ComplexRoot));
     }
 
     #[test]

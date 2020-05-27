@@ -13,6 +13,7 @@ use super::{ConstKind, Node};
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum SimplifyError {
     ZeroToPowerOfNonPositive,
+    ComplexRoot,
     Tan90Or270,
 }
 
@@ -115,6 +116,10 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
                             // take the inverse of it.
                             let root = rhs_inv.abs();
                             let root_u32 = root.try_into().unwrap();
+
+                            if root_u32 % 2 == 0 && lhs.is_negative() {
+                                return Err(SimplifyError::ComplexRoot);
+                            }
 
                             // Check if doing and undoing the root changes
                             // the output. If it's the case, then it's 
@@ -550,6 +555,15 @@ mod tests {
                 val: BigRational::from_integer(4.into()),
                 input_base: Some(8),
             }
+        );
+    }
+
+    #[test]
+    fn it_detects_impossible_real_roots() {
+        // sqrt(-1) = error
+        assert_eq!(
+            simplify(common::minus_one().sqrt()),
+            Err(SimplifyError::ComplexRoot),
         );
     }
 
