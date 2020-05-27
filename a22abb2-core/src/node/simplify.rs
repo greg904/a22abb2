@@ -3,124 +3,16 @@ use num_rational::BigRational;
 use num_traits::{One, Signed, Zero};
 use std::collections::HashMap;
 use std::iter;
+use std::ops::{Add, Mul};
 
-use super::{ConstKind, Node, VarOpKind};
-use super::util::is_minus_one;
+use super::{ConstKind, Node};
+use super::util::{get_op_result_base, is_minus_one};
 
 pub fn simplify(node: Node) -> Node {
     match node {
         Node::Const(ConstKind::Tau) => Node::Const(ConstKind::Pi) * Node::two(),
-        Node::VarOp { kind, children } => {
-            let children = deep_flatten_children(children, kind)
-                .into_iter()
-                .map(&simplify);
-            let children = collapse_numbers(children, kind);
-
-            let mut children_by_factors: HashMap<Node, Vec<Node>> = HashMap::new();
-
-            // count duplicate children
-            for child in children {
-                // TODO: better algorithm
-                let (child, factor) = match kind {
-                    VarOpKind::Add => match child {
-                        Node::VarOp {
-                            kind: VarOpKind::Mul,
-                            children: mut sub_children,
-                        } => {
-                            match sub_children.len() {
-                                2 => {
-                                    let mut iter = sub_children.into_iter();
-                                    let a = iter.next().unwrap();
-                                    let b = iter.next().unwrap();
-                                    if node_factor_heuristic(&a) > node_factor_heuristic(&b) {
-                                        (a, b)
-                                    } else {
-                                        (b, a)
-                                    }
-                                }
-
-                                len if len > 2 => {
-                                    // sort so that the last one is the factor
-                                    sub_children.sort_by(|a, b| node_factor_heuristic(a)
-                                        .partial_cmp(&node_factor_heuristic(b))
-                                        .unwrap());
-                                    let factor = sub_children.pop().unwrap();
-                                    let remaining = Node::VarOp {
-                                        kind: VarOpKind::Mul,
-                                        children: sub_children,
-                                    };
-                                    // TODO: better heuristics to put more
-                                    //  interesting factor first
-                                    (remaining, factor)
-                                }
-
-                                // There has to be at least two factors
-                                // because otherwise, it would have been
-                                // reduced to just a number, not a multiplication.
-                                _ => panic!("multiplication with less than 2 factors"),
-                            }
-                        }
-
-                        // Fallback to a factor of 1 because it doesn't
-                        // change the end value.
-                        child => (child, Node::one()),
-                    },
-                    VarOpKind::Mul => match child {
-                        Node::Exp(a, b) => (*a, *b),
-                        // Fallback to a power of 1 because it doesn't
-                        // change the end value.
-                        child => (child, Node::one()),
-                    },
-                };
-
-                children_by_factors
-                    .entry(child)
-                    .or_insert_with(Vec::new)
-                    .push(factor);
-            }
-
-            let compressed_children = children_by_factors
-                .into_iter()
-                .filter_map(|(child, factors)| {
-                    let factors = collapse_numbers(factors.into_iter(), VarOpKind::Add);
-
-                    // if there is only one factor, return it instead of a list to add
-                    match factors.len() {
-                        0 => None,
-                        1 => Some(match factors.into_iter().next().unwrap() {
-                            // if the only factor is 1, then return the child directly
-                            Node::Num { ref val, .. } if val.is_one() => child,
-                            // If the only factor is 0, then discard because 0
-                            // times anything is 0.
-                            Node::Num { ref val, .. } if val.is_zero() => return None,
-
-                            other => kind.compress(child, other),
-                        }),
-                        _ => Some(kind.compress(
-                            child,
-                            Node::VarOp {
-                                kind: VarOpKind::Add,
-                                children: factors,
-                            },
-                        )),
-                    }
-                })
-                .collect::<Vec<_>>();
-
-            // if there is only one node, return it instead of a list to evaluate
-            match compressed_children.len() {
-                0 => Node::Num {
-                    val: kind.identity_bigr(),
-                    input_base: None,
-                },
-                1 => compressed_children.into_iter().next().unwrap(),
-                _ => Node::VarOp {
-                    kind,
-                    children: compressed_children,
-                },
-            }
-        }
-
+        Node::Sum(children) => simplify_vararg_op(children, true),
+        Node::Product(children) => simplify_vararg_op(children, false),
         Node::Exp(a, b) => match (simplify(*a), simplify(*b)) {
             // 1^k equals 1
             (Node::Num { ref val, .. }, _) if val.is_one() => Node::one(),
@@ -260,10 +152,7 @@ fn get_pi_factor(node: &Node) -> Option<BigRational> {
         Node::Const(ConstKind::Pi) => Some(BigRational::from_integer(1.into())),
         Node::Const(ConstKind::Tau) => Some(BigRational::from_integer(2.into())),
         Node::Num { val, .. } if val.is_zero() => Some(Zero::zero()),
-        Node::VarOp {
-            children,
-            kind: VarOpKind::Mul,
-        } => {
+        Node::Product(children) => {
             let mut total_factor: BigRational = One::one();
             let mut has_pi = false;
             for child in children {
@@ -301,63 +190,59 @@ fn get_pi_factor(node: &Node) -> Option<BigRational> {
     }
 }
 
-fn collapse_numbers<I>(nodes: I, kind: VarOpKind) -> Vec<Node>
+fn group_and_fold_numbers<I, F>(nodes: I, f: F) -> Vec<Node>
 where
     I: Iterator<Item = Node>,
+    F: Fn(BigRational, BigRational) -> BigRational
 {
     let mut result = Vec::new();
-    let mut number = None;
-    let mut base = None;
+    let mut acc = None;
+    let mut acc_base = None;
 
     for node in nodes {
         match node {
             Node::Num { val, input_base } => {
-                let left = match number {
-                    Some(val) => val,
-                    None => kind.identity_bigr(),
-                };
-
-                number = Some(kind.eval_bigr_fn()(left, val));
-                base = Node::get_op_result_base(base, input_base);
+                acc = Some(match acc {
+                    Some(lhs) => f(lhs, val),
+                    None => val,
+                });
+                acc_base = get_op_result_base(acc_base, input_base);
             }
-
             other => result.push(other),
         }
     }
-
     // put the result number with all of the other nodes
-    if let Some(number) = number {
+    if let Some(last) = acc {
         result.push(Node::Num {
-            val: number,
-            input_base: base,
+            val: last,
+            input_base: acc_base,
         });
     }
-
     result
 }
 
 /// Turns add(add(1, add(2)), 3) into add(1, 2, 3).
-fn deep_flatten_children(children: Vec<Node>, op_kind: VarOpKind) -> Vec<Node> {
+fn deep_flatten_children<I>(children: I, parent_is_sum: bool) -> Vec<Node>
+where I: IntoIterator<Item = Node> {
     let mut result = Vec::new();
-    let mut remaining = children;
 
+    let mut remaining: Vec<Node> = children.into_iter().collect();
     while !remaining.is_empty() {
         remaining = remaining
             .into_iter()
             .flat_map(|child| {
-                // a workaround to make the borrow checker happy
-                let can_be_flattened = if let Node::VarOp { kind: sub_kind, .. } = &child {
-                    *sub_kind == op_kind
-                } else {
-                    false
+                // can be flattened if it's the same type as parent
+                let can_be_flattened = match (parent_is_sum, &child) {
+                    (true, Node::Sum(_)) => true,
+                    (false, Node::Product(_)) => true,
+                    _ => false,
                 };
-
                 if can_be_flattened {
                     let sub_children = match child {
-                        Node::VarOp { children: val, .. } => val,
+                        Node::Sum(val) => val,
+                        Node::Product(val) => val,
                         _ => unreachable!(),
                     };
-
                     // The child can be flattened, so we will continue
                     // in the next round.
                     Either::Left(sub_children.into_iter())
@@ -369,15 +254,126 @@ fn deep_flatten_children(children: Vec<Node>, op_kind: VarOpKind) -> Vec<Node> {
             })
             .collect::<Vec<_>>();
     }
-
     result
+}
+
+fn simplify_vararg_op<I>(children: I, is_sum: bool) -> Node
+where I: IntoIterator<Item = Node> {
+    let children = deep_flatten_children(children, is_sum)
+        .into_iter()
+        .map(&simplify);
+    let acc_f = if is_sum { Add::add } else { Mul::mul };
+    let children = group_and_fold_numbers(children, acc_f);
+
+    // in the case of multiplication, this is children by exponent
+    let mut children_by_factors: HashMap<Node, Vec<Node>> = HashMap::new();
+
+    for child in children {
+        // TODO: better algorithm
+        let (child, factor) = if is_sum {
+            match child {
+                Node::Product(mut sub_children) => {
+                    match sub_children.len() {
+                        2 => {
+                            let mut iter = sub_children.into_iter();
+                            let a = iter.next().unwrap();
+                            let b = iter.next().unwrap();
+                            if node_factor_heuristic(&a) > node_factor_heuristic(&b) {
+                                (a, b)
+                            } else {
+                                (b, a)
+                            }
+                        }
+
+                        len if len > 2 => {
+                            // sort so that the last one is the factor
+                            sub_children.sort_by(|a, b| node_factor_heuristic(a)
+                                .partial_cmp(&node_factor_heuristic(b))
+                                .unwrap());
+                            let factor = sub_children.pop().unwrap();
+                            let remaining = Node::Product(sub_children);
+                            // TODO: better heuristics to put more
+                            //  interesting factor first
+                            (remaining, factor)
+                        }
+
+                        // There has to be at least two factors
+                        // because otherwise, it would have been
+                        // reduced to just a number, not a multiplication.
+                        _ => panic!("multiplication with less than 2 factors"),
+                    }
+                }
+
+                // Fallback to a factor of 1 because it doesn't
+                // change the end value.
+                child => (child, Node::one()),
+            }
+        } else {
+            match child {
+                Node::Exp(a, b) => (*a, *b),
+                // Fallback to a power of 1 because it doesn't
+                // change the end value.
+                child => (child, Node::one()),
+            }
+        };
+
+        children_by_factors
+            .entry(child)
+            .or_insert_with(Vec::new)
+            .push(factor);
+    }
+
+    let children = children_by_factors
+        .into_iter()
+        .filter_map(|(child, factors)| {
+            // We always want to use addition here to fold factors:
+            // - pi*3 + pi*5 = pi*(3+5)
+            // - pi^3 * pi^5 = pi^(3+5)
+            let factors = group_and_fold_numbers(factors.into_iter(), Add::add);
+
+            // if there is only one factor, return it instead of a list to add
+            match factors.len() {
+                0 => None,
+                1 => Some(match factors.into_iter().next().unwrap() {
+                    // if the only factor is 1, then return the child directly
+                    Node::Num { ref val, .. } if val.is_one() => child,
+                    // If the only factor is 0, then discard because 0
+                    // times anything is 0.
+                    Node::Num { ref val, .. } if val.is_zero() => return None,
+
+                    other => fold_helper(child, other, is_sum),
+                }),
+                _ => Some(fold_helper(child, Node::Sum(factors), is_sum)),
+            }
+        })
+        .collect::<Vec<_>>();
+
+    // if there is only one node, return it instead of a list to evaluate
+    match children.len() {
+        0 => Node::Num {
+            // identity
+            val: if is_sum { Zero::zero() } else { One::one() },
+            input_base: None,
+        },
+        1 => children.into_iter().next().unwrap(),
+        _ if is_sum => Node::Sum(children),
+        _ => Node::Product(children),
+    }
+}
+
+fn fold_helper(x: Node, factor: Node, is_sum: bool) -> Node {
+    if is_sum {
+        x * factor
+    } else {
+        Node::Exp(Box::new(x), Box::new(factor))
+    }
 }
 
 fn node_factor_heuristic(node: &Node) -> u32 {
     // greater numbers mean "use me as a factor" when factoring
     match node {
         Node::Sin(_) | Node::Cos(_) | Node::Tan(_) => 4,
-        Node::VarOp { .. } => 3,
+        Node::Sum(_) | Node::Product(_) => 3,
         Node::Const(_) => 2,
         Node::Exp(_, _) => 1,
         _ => 0,

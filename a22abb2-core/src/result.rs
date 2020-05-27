@@ -95,7 +95,7 @@ impl Display for EvalResult {
                 out.pad_integral(is_nonnegative, "0b", &result)
             }
 
-            _ => unimplemented!(),
+            _ => todo!(),
         }
     }
 }

@@ -2,7 +2,7 @@ use num_traits::{One, Signed};
 use std::fmt;
 use std::fmt::{Display, Write};
 
-use super::{ConstKind, Node, VarOpKind};
+use super::{ConstKind, Node};
 use super::util::is_minus_one;
 
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
@@ -24,10 +24,8 @@ fn get_node_priority(node: &Node) -> NodePriority {
                 NodePriority::MulOrDiv
             }
         }
-        Node::VarOp { kind, .. } => match kind {
-            VarOpKind::Add => NodePriority::AddOrSub,
-            VarOpKind::Mul => NodePriority::MulOrDiv,
-        },
+        Node::Sum(_) => NodePriority::AddOrSub,
+        Node::Product(_) => NodePriority::MulOrDiv,
         Node::Exp(_, b) => if is_minus_one(b) {
             // will show as inverse
             NodePriority::MulOrDiv
@@ -91,69 +89,69 @@ impl Display for Node {
                     }
                 }
             }
-            Node::VarOp { kind, children } => {
+            Node::Sum(children) => {
                 let mut first = true;
                 for child in children {
                     if first {
                         first = false;
                     } else {
-                        let op_char = match kind {
-                            VarOpKind::Add => {
-                                // detect subtraction
-                                if let Node::VarOp {
-                                    kind: VarOpKind::Mul,
-                                    children: c_children,
-                                } = child
-                                {
-                                    if c_children.len() == 2 {
-                                        let mut is_done = false;
-                                        for i in 0..=1 {
-                                            if is_minus_one(&c_children[i]) {
-                                                // directly output "- x" instead of "+ (-1) * x"
-                                                write!(f, " - ")?;
-                                                write_with_paren(
-                                                    f,
-                                                    &c_children[1 - i],
-                                                    NodePriority::AddOrSub,
-                                                    false,
-                                                    false,
-                                                )?;
-                                                is_done = true;
-                                                break;
-                                            }
-                                        }
-                                        if is_done {
-                                            continue;
-                                        }
-                                    }
-                                } else if let Node::Num { val, input_base } = child {
-                                    if val.is_negative() {
-                                        // directly output "- x" instead of "+ -x"
+                        // detect subtraction
+                        if let Node::Product(c_children) = child {
+                            if c_children.len() == 2 {
+                                let mut is_done = false;
+                                for i in 0..=1 {
+                                    if is_minus_one(&c_children[i]) {
+                                        // directly output "- x" instead of "+ (-1) * x"
                                         write!(f, " - ")?;
-                                        let fake_node = Node::Num {
-                                            val: -val, // remove negative sign
-                                            input_base: *input_base,
-                                        };
-                                        fake_node.fmt(f)?;
-                                        continue;
+                                        write_with_paren(
+                                            f,
+                                            &c_children[1 - i],
+                                            NodePriority::AddOrSub,
+                                            false,
+                                            false,
+                                        )?;
+                                        is_done = true;
+                                        break;
                                     }
                                 }
-                                '+'
-                            }
-                            VarOpKind::Mul => {
-                                // detect division
-                                if let Node::Exp(a, b) = child {
-                                    if is_minus_one(b) {
-                                        // directly output "/ x" instead of "* 1/x"
-                                        write!(f, " / ")?;
-                                        write_with_paren(f, a, NodePriority::MulOrDiv, false, false)?;
-                                        continue;
-                                    }
+                                if is_done {
+                                    continue;
                                 }
-                                '*'
                             }
-                        };
-                        write!(f, " {} ", op_char)?;
+                        } else if let Node::Num { val, input_base } = child {
+                            if val.is_negative() {
+                                // directly output "- x" instead of "+ -x"
+                                write!(f, " - ")?;
+                                let fake_node = Node::Num {
+                                    val: -val, // remove negative sign
+                                    input_base: *input_base,
+                                };
+                                fake_node.fmt(f)?;
+                                continue;
+                            }
+                        }
+                        write!(f, " + ")?;
+                    };
+                    write_with_paren(f, child, get_node_priority(self), true, false)?;
+                }
+                Ok(())
+            }
+            Node::Product(children) => {
+                let mut first = true;
+                for child in children {
+                    if first {
+                        first = false;
+                    } else {
+                        // detect division
+                        if let Node::Exp(a, b) = child {
+                            if is_minus_one(b) {
+                                // directly output "/ x" instead of "* 1/x"
+                                write!(f, " / ")?;
+                                write_with_paren(f, a, NodePriority::MulOrDiv, false, false)?;
+                                continue;
+                            }
+                        }
+                        write!(f, " * ")?;
                     }
                     write_with_paren(f, child, get_node_priority(self), true, false)?;
                 }

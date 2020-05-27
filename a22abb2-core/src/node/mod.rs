@@ -10,6 +10,7 @@ use std::ops::*;
 
 use crate::ratio2flt::ratio_to_f64;
 use crate::EvalResult;
+use self::util::{fold_nodes, get_op_result_base};
 
 /// A constant in mathematics
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
@@ -17,49 +18,6 @@ pub enum ConstKind {
     Pi,
     Tau,
     E,
-}
-
-/// A kind of operator that can take multiple children
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
-pub enum VarOpKind {
-    Add,
-    Mul,
-}
-
-impl VarOpKind {
-    pub fn identity_f64(self) -> f64 {
-        match self {
-            VarOpKind::Add => 0.0,
-            VarOpKind::Mul => 1.0,
-        }
-    }
-
-    pub fn eval_f64_fn(self) -> &'static dyn Fn(f64, f64) -> f64 {
-        match self {
-            VarOpKind::Add => &Add::add,
-            VarOpKind::Mul => &Mul::mul,
-        }
-    }
-
-    // TODO: move the following functions to `simplify.rs`
-    pub fn identity_bigr(self) -> BigRational {
-        match self {
-            VarOpKind::Add => Zero::zero(),
-            VarOpKind::Mul => One::one(),
-        }
-    }
-    pub fn eval_bigr_fn(self) -> &'static dyn Fn(BigRational, BigRational) -> BigRational {
-        match self {
-            VarOpKind::Add => &Add::add,
-            VarOpKind::Mul => &Mul::mul,
-        }
-    }
-    fn compress(self, node: Node, count: Node) -> Node {
-        match self {
-            VarOpKind::Add => node * count,
-            VarOpKind::Mul => Node::Exp(Box::new(node), Box::new(count)),
-        }
-    }
 }
 
 /// A node is an operation in the AST (abstract syntax tree).
@@ -74,10 +32,8 @@ pub enum Node {
         /// by the user
         input_base: Option<u32>,
     },
-    VarOp {
-        kind: VarOpKind,
-        children: Vec<Node>,
-    },
+    Sum(Vec<Node>),
+    Product(Vec<Node>),
     Exp(Box<Node>, Box<Node>),
     // functions
     Sin(Box<Node>),
@@ -101,7 +57,8 @@ impl Node {
                 val: ratio_to_f64(&val),
                 display_base: *input_base,
             },
-            Node::VarOp { kind, children } => Node::eval_var_op(children.iter(), *kind),
+            Node::Sum(children) => fold_nodes(children.iter(), 0.0, Add::add),
+            Node::Product(children) => fold_nodes(children.iter(), 1.0, Mul::mul),
             Node::Exp(a, b) => {
                 let a = a.eval();
                 let b = b.eval();
@@ -123,31 +80,12 @@ impl Node {
                 }
                 EvalResult {
                     val: a.val.powf(b.val),
-                    display_base: Node::get_op_result_base(a.display_base, b.display_base),
+                    display_base: get_op_result_base(a.display_base, b.display_base),
                 }
             }
-            Node::Sin(inner) => inner.eval_map(|x| x.sin(), false),
-            Node::Cos(inner) => inner.eval_map(|x| x.cos(), false),
-            Node::Tan(inner) => inner.eval_map(|x| x.tan(), false),
-        }
-    }
-
-    fn eval_var_op<'a, I>(children: I, kind: VarOpKind) -> EvalResult
-    where
-        I: Iterator<Item = &'a Node>,
-    {
-        let mut result = kind.identity_f64();
-        let mut result_base = None;
-
-        for child in children {
-            let child = child.eval();
-            result = kind.eval_f64_fn()(result, child.val);
-            result_base = Node::get_op_result_base(result_base, child.display_base);
-        }
-
-        EvalResult {
-            val: result,
-            display_base: result_base,
+            Node::Sin(inner) => inner.eval_map(f64::sin, false),
+            Node::Cos(inner) => inner.eval_map(f64::cos, false),
+            Node::Tan(inner) => inner.eval_map(f64::tan, false),
         }
     }
 
@@ -163,18 +101,7 @@ impl Node {
         }
     }
 
-    fn get_op_result_base(a_base: Option<u32>, b_base: Option<u32>) -> Option<u32> {
-        match (a_base, b_base) {
-            (Some(val), None) | (None, Some(val)) => Some(val),
-
-            // prefer the more interesting bases
-            (Some(10), Some(other)) | (Some(other), Some(10)) => Some(other),
-            (Some(2), _) | (_, Some(2)) => Some(2),
-
-            (Some(a), Some(_)) => Some(a), // prefer the base of the first term
-            (None, None) => None,
-        }
-    }
+    
 
     fn zero() -> Node {
         Node::Num {
@@ -236,10 +163,7 @@ impl Add for Node {
     type Output = Node;
 
     fn add(self, rhs: Self) -> Self::Output {
-        Node::VarOp {
-            kind: VarOpKind::Add,
-            children: vec![self, rhs],
-        }
+        Node::Sum(vec![self, rhs])
     }
 }
 
@@ -263,10 +187,7 @@ impl Mul for Node {
     type Output = Node;
 
     fn mul(self, rhs: Self) -> Self::Output {
-        Node::VarOp {
-            kind: VarOpKind::Mul,
-            children: vec![self, rhs],
-        }
+        Node::Product(vec![self, rhs])
     }
 }
 
