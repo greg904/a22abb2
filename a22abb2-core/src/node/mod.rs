@@ -105,6 +105,22 @@ impl Node {
             Node::Exp(a, b) => {
                 let a = a.eval();
                 let b = b.eval();
+                if b.val == 0.0 {
+                    return EvalResult {
+                        val: 1.0,
+                        display_base: a.display_base,
+                    };
+                } else if b.val == 1.0 {
+                    return EvalResult {
+                        val: a.val,
+                        display_base: a.display_base,
+                    };
+                } else if b.val == -1.0 {
+                    return EvalResult {
+                        val: 1.0 / a.val,
+                        display_base: a.display_base,
+                    };
+                }
                 EvalResult {
                     val: a.val.powf(b.val),
                     display_base: Node::get_op_result_base(a.display_base, b.display_base),

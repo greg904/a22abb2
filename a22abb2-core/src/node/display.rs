@@ -3,7 +3,7 @@ use std::fmt;
 use std::fmt::{Display, Write};
 
 use super::{ConstKind, Node, VarOpKind};
-use super::util::is_baseless_minus_one;
+use super::util::is_minus_one;
 
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 enum NodePriority {
@@ -28,7 +28,7 @@ fn get_node_priority(node: &Node) -> NodePriority {
             VarOpKind::Add => NodePriority::AddOrSub,
             VarOpKind::Mul => NodePriority::MulOrDiv,
         },
-        Node::Exp(_, b) => if is_baseless_minus_one(b) {
+        Node::Exp(_, b) => if is_minus_one(b) {
             // will show as inverse
             NodePriority::MulOrDiv
         } else {
@@ -108,7 +108,7 @@ impl Display for Node {
                                     if c_children.len() == 2 {
                                         let mut is_done = false;
                                         for i in 0..=1 {
-                                            if is_baseless_minus_one(&c_children[i]) {
+                                            if is_minus_one(&c_children[i]) {
                                                 // directly output "- x" instead of "+ (-1) * x"
                                                 write!(f, " - ")?;
                                                 write_with_paren(
@@ -143,7 +143,7 @@ impl Display for Node {
                             VarOpKind::Mul => {
                                 // detect division
                                 if let Node::Exp(a, b) = child {
-                                    if is_baseless_minus_one(b) {
+                                    if is_minus_one(b) {
                                         // directly output "/ x" instead of "* 1/x"
                                         write!(f, " / ")?;
                                         write_with_paren(f, a, NodePriority::MulOrDiv, false, false)?;
@@ -160,7 +160,7 @@ impl Display for Node {
                 Ok(())
             }
             Node::Exp(a, b) => {
-                if is_baseless_minus_one(b) {
+                if is_minus_one(b) {
                     // a^-1 = 1/a
                     write!(f, "1/")?;
                     write_with_paren(f, a, NodePriority::MulOrDiv, true, false)

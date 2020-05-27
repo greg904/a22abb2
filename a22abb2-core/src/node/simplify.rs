@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::iter;
 
 use super::{ConstKind, Node, VarOpKind};
-use super::util::is_baseless_minus_one;
+use super::util::is_minus_one;
 
 pub fn simplify(node: Node) -> Node {
     match node {
@@ -141,7 +141,7 @@ pub fn simplify(node: Node) -> Node {
                 }
                 Node::Exp(c, Box::new(new_exp))
             },
-            (Node::Num { val, input_base }, rhs) if is_baseless_minus_one(&rhs) => {
+            (Node::Num { val, input_base }, rhs) if is_minus_one(&rhs) => {
                 let (numer, denom) = val.into();
                 Node::Num {
                     // take the inverse by swapping numerator and denominator
