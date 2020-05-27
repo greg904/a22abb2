@@ -6,8 +6,8 @@ use std::collections::HashMap;
 use std::iter;
 use std::ops::{Add, Mul};
 
+use super::util::{common, get_op_result_base, is_minus_one};
 use super::{ConstKind, Node};
-use super::util::{get_op_result_base, is_minus_one, common};
 
 /// A description of an error that happened while trying to simplify a node.
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -33,26 +33,30 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
                 if let Node::Num { val, input_base } = &new_exp {
                     // We cannot simplify if it changes the display base of the
                     // result!
-                    let will_not_change_base = input_base.map(|x| x == 10)
-                        .unwrap_or(true);
+                    let will_not_change_base = input_base.map(|x| x == 10).unwrap_or(true);
                     if will_not_change_base && val.is_one() {
                         // 1^k equals 1
                         return Ok(*c);
                     }
                 }
                 Node::Exp(c, Box::new(new_exp))
-            },
+            }
             // try to do it manually
             (
-                Node::Num { val: val_a, input_base: input_base_a },
-                Node::Num { val: val_b, input_base: input_base_b },
+                Node::Num {
+                    val: val_a,
+                    input_base: input_base_a,
+                },
+                Node::Num {
+                    val: val_b,
+                    input_base: input_base_b,
+                },
             ) => {
                 fn ratio_to_i32(ratio: &BigRational) -> Option<i32> {
                     if ratio.denom().is_one() {
                         ratio.numer().to_i32()
                     } else if *ratio.denom() == (-1).into() {
-                        ratio.numer().to_i32()
-                            .and_then(|x| x.checked_neg())
+                        ratio.numer().to_i32().and_then(|x| x.checked_neg())
                     } else {
                         None
                     }
@@ -64,10 +68,16 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
                         // this is handled in another match arm
                         assert_ne!(expon, 0);
                         if expon > 0 {
-                            BigRational::new(a.numer().pow(expon as u32), a.denom().pow(expon as u32))
+                            BigRational::new(
+                                a.numer().pow(expon as u32),
+                                a.denom().pow(expon as u32),
+                            )
                         } else {
                             let pos_expon = expon.abs();
-                            BigRational::new(a.denom().pow(pos_expon as u32), a.numer().pow(pos_expon as u32))
+                            BigRational::new(
+                                a.denom().pow(pos_expon as u32),
+                                a.numer().pow(pos_expon as u32),
+                            )
                         }
                     }
                     return Ok(Node::Num {
@@ -82,8 +92,9 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
                             // output. If it's the case, then it's because we're
                             // limited by precision and we won't simplify.
                             let result = int_base.nth_root(root);
-                            let result_undo = result.checked_pow(root)
-                                .expect("should not overflow because original number fitted in u32");
+                            let result_undo = result.checked_pow(root).expect(
+                                "should not overflow because original number fitted in u32",
+                            );
                             if result_undo == int_base {
                                 return Ok(Node::Num {
                                     val: BigRational::from_integer(result.into()),
@@ -95,10 +106,16 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
                 }
                 // cannot simplify, so repack the numbers
                 Node::Exp(
-                    Box::new(Node::Num { val: val_a, input_base: input_base_a }),
-                    Box::new(Node::Num { val: val_b, input_base: input_base_b })
+                    Box::new(Node::Num {
+                        val: val_a,
+                        input_base: input_base_a,
+                    }),
+                    Box::new(Node::Num {
+                        val: val_b,
+                        input_base: input_base_b,
+                    }),
                 )
-            },
+            }
             (Node::Num { val, input_base }, rhs) if is_minus_one(&rhs) => {
                 let (numer, denom) = val.into();
                 Node::Num {
@@ -259,7 +276,7 @@ fn get_pi_factor(node: &Node) -> Option<BigRational> {
 fn group_and_fold_numbers<I, F>(nodes: I, f: F) -> Vec<Node>
 where
     I: Iterator<Item = Node>,
-    F: Fn(BigRational, BigRational) -> BigRational
+    F: Fn(BigRational, BigRational) -> BigRational,
 {
     let mut result = Vec::new();
     let mut acc = None;
@@ -289,7 +306,9 @@ where
 
 /// Turns add(add(1, add(2)), 3) into add(1, 2, 3).
 fn deep_flatten_children<I>(children: I, parent_is_sum: bool) -> Vec<Node>
-where I: IntoIterator<Item = Node> {
+where
+    I: IntoIterator<Item = Node>,
+{
     let mut result = Vec::new();
 
     let mut remaining: Vec<Node> = children.into_iter().collect();
@@ -324,9 +343,12 @@ where I: IntoIterator<Item = Node> {
 }
 
 fn simplify_vararg_op<I>(children: I, is_sum: bool) -> Result<Node, SimplifyError>
-where I: IntoIterator<Item = Node> {
+where
+    I: IntoIterator<Item = Node>,
+{
     let children = deep_flatten_children(children, is_sum);
-    let children: Vec<Node> = children.into_iter()
+    let children: Vec<Node> = children
+        .into_iter()
         .map(simplify)
         .collect::<Result<Vec<Node>, _>>()?;
     let acc_f = if is_sum { Add::add } else { Mul::mul };
@@ -354,9 +376,11 @@ where I: IntoIterator<Item = Node> {
 
                         len if len > 2 => {
                             // sort so that the last one is the factor
-                            sub_children.sort_by(|a, b| node_factor_heuristic(a)
-                                .partial_cmp(&node_factor_heuristic(b))
-                                .unwrap());
+                            sub_children.sort_by(|a, b| {
+                                node_factor_heuristic(a)
+                                    .partial_cmp(&node_factor_heuristic(b))
+                                    .unwrap()
+                            });
                             let factor = sub_children.pop().unwrap();
                             let remaining = Node::Product(sub_children);
                             // TODO: better heuristics to put more
@@ -449,8 +473,8 @@ fn node_factor_heuristic(node: &Node) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use crate::node::EvalError;
     use super::*;
+    use crate::node::EvalError;
 
     #[test]
     fn it_simplifies_roots() {
@@ -478,11 +502,15 @@ mod tests {
         assert_eq!(
             simplify(Node::Exp(
                 Box::new(num),
-                Box::new(Node::Num {
-                    val: BigRational::from_integer(4.into()),
-                    input_base: Some(10),
-                }.inverse())
-            )).unwrap(),
+                Box::new(
+                    Node::Num {
+                        val: BigRational::from_integer(4.into()),
+                        input_base: Some(10),
+                    }
+                    .inverse()
+                )
+            ))
+            .unwrap(),
             Node::Num {
                 val: BigRational::from_integer(4.into()),
                 input_base: Some(8),

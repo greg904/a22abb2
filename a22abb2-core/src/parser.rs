@@ -205,10 +205,13 @@ mod tests {
         let root_node = parser.parse().unwrap();
         assert_eq!(
             root_node,
-            Node::Sin(Box::new(Node::Cos(Box::new(Node::Num {
-                val: One::one(),
-                input_base: Some(10)
-            }.sqrt()))))
+            Node::Sin(Box::new(Node::Cos(Box::new(
+                Node::Num {
+                    val: One::one(),
+                    input_base: Some(10)
+                }
+                .sqrt()
+            ))))
         );
     }
 }

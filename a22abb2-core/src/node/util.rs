@@ -25,8 +25,9 @@ pub(crate) fn get_op_result_base(a_base: Option<u32>, b_base: Option<u32>) -> Op
 }
 
 pub(crate) fn fold_nodes<'a, I, F>(nodes: I, init: f64, f: F) -> Result<EvalSuccess, EvalError>
-where I: Iterator<Item = &'a Node>,
-      F: Fn(f64, f64) -> f64
+where
+    I: Iterator<Item = &'a Node>,
+    F: Fn(f64, f64) -> f64,
 {
     let mut acc = init;
     let mut acc_base = None;

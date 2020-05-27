@@ -5,9 +5,9 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::ops::*;
 
-use crate::ratio2flt::ratio_to_f64;
-use super::{ConstKind, Node};
 use super::util::{fold_nodes, get_op_result_base};
+use super::{ConstKind, Node};
+use crate::ratio2flt::ratio_to_f64;
 
 /// A struct that holds the result of a calculation.
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -46,20 +46,44 @@ pub fn eval(node: &Node) -> Result<EvalSuccess, EvalError> {
         Node::Exp(a, b) => {
             let a = eval(a)?;
             let b = eval(b)?;
-            if b.val.approx_eq(0.0, F64Margin { epsilon: 0.0, ulps: 2 }) {
-                if a.val.approx_eq(0.0, F64Margin { epsilon: 0.0, ulps: 2 }) {
+            if b.val.approx_eq(
+                0.0,
+                F64Margin {
+                    epsilon: 0.0,
+                    ulps: 2,
+                },
+            ) {
+                if a.val.approx_eq(
+                    0.0,
+                    F64Margin {
+                        epsilon: 0.0,
+                        ulps: 2,
+                    },
+                ) {
                     return Err(EvalError::ZeroToThePowerOfZero);
                 }
                 return Ok(EvalSuccess {
                     val: 1.0,
                     display_base: a.display_base,
                 });
-            } else if b.val.approx_eq(1.0, F64Margin { epsilon: 0.0, ulps: 3 }) {
+            } else if b.val.approx_eq(
+                1.0,
+                F64Margin {
+                    epsilon: 0.0,
+                    ulps: 3,
+                },
+            ) {
                 return Ok(EvalSuccess {
                     val: a.val,
                     display_base: a.display_base,
                 });
-            } else if b.val.approx_eq(-1.0, F64Margin { epsilon: 0.0, ulps: 3 }) {
+            } else if b.val.approx_eq(
+                -1.0,
+                F64Margin {
+                    epsilon: 0.0,
+                    ulps: 3,
+                },
+            ) {
                 return Ok(EvalSuccess {
                     val: 1.0 / a.val,
                     display_base: a.display_base,
@@ -86,19 +110,34 @@ pub fn eval(node: &Node) -> Result<EvalSuccess, EvalError> {
             let n = (original.val / (PI * 2.0)).floor();
             let impossible1 = n * (PI * 2.0) + PI / 2.0;
             let impossible2 = n * (PI * 2.0) + 3.0 * PI / 2.0;
-            if original.val.approx_eq(impossible1, F64Margin { epsilon: 0.0, ulps: 3 }) ||
-                original.val.approx_eq(impossible2, F64Margin { epsilon: 0.0, ulps: 3 }) {
+            if original.val.approx_eq(
+                impossible1,
+                F64Margin {
+                    epsilon: 0.0,
+                    ulps: 3,
+                },
+            ) || original.val.approx_eq(
+                impossible2,
+                F64Margin {
+                    epsilon: 0.0,
+                    ulps: 3,
+                },
+            ) {
                 return Err(EvalError::Tan90Or270);
             }
             EvalSuccess {
                 val: original.val.tan(),
                 display_base: None,
             }
-        },
+        }
     })
 }
 
-fn eval_map<F: Fn(f64) -> f64>(node: &Node, f: F, keep_base: bool) -> Result<EvalSuccess, EvalError> {
+fn eval_map<F: Fn(f64) -> f64>(
+    node: &Node,
+    f: F,
+    keep_base: bool,
+) -> Result<EvalSuccess, EvalError> {
     let original = eval(node)?;
     if original.val.is_infinite() {
         // don't even try anymore
@@ -193,7 +232,7 @@ impl Display for EvalSuccess {
             _ => {
                 eprintln!("cannot print result in bases other than 10 and two yet");
                 self.val.fmt(out)
-            },
+            }
         }
     }
 }
@@ -202,8 +241,8 @@ impl Display for EvalSuccess {
 mod tests {
     use num_rational::BigRational;
 
-    use crate::node::util::common;
     use super::*;
+    use crate::node::util::common;
 
     #[test]
     fn it_errors_with_pow_0_0() {
@@ -226,9 +265,11 @@ mod tests {
         // tan(97pi/2)
         let ninety_seven = Node::Num {
             val: BigRational::from_integer(97.into()),
-            input_base: Some(10)
+            input_base: Some(10),
         };
-        let input = Node::Tan(Box::new(ninety_seven * Node::Const(ConstKind::Pi) / common::two()));
+        let input = Node::Tan(Box::new(
+            ninety_seven * Node::Const(ConstKind::Pi) / common::two(),
+        ));
         let result = eval(&input);
         assert_eq!(result, Err(EvalError::Tan90Or270));
     }

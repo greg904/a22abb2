@@ -2,8 +2,8 @@ use num_traits::{One, Signed};
 use std::fmt;
 use std::fmt::{Display, Write};
 
-use super::{ConstKind, Node};
 use super::util::is_minus_one;
+use super::{ConstKind, Node};
 
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 enum NodePriority {
@@ -26,12 +26,14 @@ fn get_node_priority(node: &Node) -> NodePriority {
         }
         Node::Sum(_) => NodePriority::AddOrSub,
         Node::Product(_) => NodePriority::MulOrDiv,
-        Node::Exp(_, b) => if is_minus_one(b) {
-            // will show as inverse
-            NodePriority::MulOrDiv
-        } else {
-            NodePriority::Exp
-        },
+        Node::Exp(_, b) => {
+            if is_minus_one(b) {
+                // will show as inverse
+                NodePriority::MulOrDiv
+            } else {
+                NodePriority::Exp
+            }
+        }
         // functions
         Node::Sin(_) | Node::Cos(_) | Node::Tan(_) => NodePriority::Exp,
     }
