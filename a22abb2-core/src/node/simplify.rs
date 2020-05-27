@@ -2,7 +2,7 @@ use either::Either;
 use num_rational::BigRational;
 use num_traits::{One, Pow, Signed, ToPrimitive, Zero};
 use std::collections::HashMap;
-use std::convert::{TryInto, TryFrom};
+use std::convert::{TryFrom, TryInto};
 use std::iter;
 use std::ops::{Add, Mul};
 
@@ -67,7 +67,8 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
                 }
                 fn is_pow_safe(lhs_bits: usize, expon: i32) -> bool {
                     // heuristic to prevent extremely big numbers
-                    u32::try_from(lhs_bits).ok()
+                    u32::try_from(lhs_bits)
+                        .ok()
                         .and_then(|x| 2048i32.checked_shr(x))
                         .map(|x| expon.abs() <= x)
                         .unwrap_or(false)
@@ -125,7 +126,7 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
                             }
 
                             // Check if doing and undoing the root changes
-                            // the output. If it's the case, then it's 
+                            // the output. If it's the case, then it's
                             // because we're limited by precision and we
                             // won't simplify.
                             let result = lhs.nth_root(root_u32);
@@ -516,6 +517,8 @@ fn node_factor_heuristic(node: &Node) -> u32 {
 
 #[cfg(test)]
 mod tests {
+    use float_cmp::{ApproxEq, F64Margin};
+
     use super::*;
     use crate::node::EvalError;
 
@@ -597,7 +600,15 @@ mod tests {
             };
             let simplified = simplify(node).unwrap().eval().unwrap();
             assert!(
-                (simplified.val - ground_truth.val).abs() < 0.001,
+                simplified.val.approx_eq(
+                    ground_truth.val,
+                    // I think that the crate is broken and doesn't calculate
+                    // ULPS correctly so I've had to use the epsilon parameter.
+                    F64Margin {
+                        ulps: 0,
+                        epsilon: 0.000001
+                    }
+                ),
                 "input: {}, output: {}, expected: {}",
                 input,
                 simplified.val,
