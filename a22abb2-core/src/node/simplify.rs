@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use std::iter;
 
 use super::{ConstKind, Node, VarOpKind};
+use super::util::is_baseless_minus_one;
 
 pub fn simplify(node: Node) -> Node {
     match node {
@@ -66,10 +67,6 @@ pub fn simplify(node: Node) -> Node {
                     },
                     VarOpKind::Mul => match child {
                         Node::Exp(a, b) => (*a, *b),
-                        // Transform 1/x into x^-1.
-                        // For example, this will allow us to do the following
-                        // simplification: x * 1/x = x^1 * x^-1 = 1
-                        Node::Inverse(inner) => (*inner, Node::minus_one()),
                         // Fallback to a power of 1 because it doesn't
                         // change the end value.
                         child => (child, Node::one()),
@@ -144,24 +141,16 @@ pub fn simplify(node: Node) -> Node {
                 }
                 Node::Exp(c, Box::new(new_exp))
             },
-            // we cannot simplify
-            (a, b) => Node::Exp(Box::new(a), Box::new(b)),
-        },
-
-        Node::Inverse(a) => match simplify(*a) {
-            Node::Num { val, input_base } => {
+            (Node::Num { val, input_base }, rhs) if is_baseless_minus_one(&rhs) => {
                 let (numer, denom) = val.into();
-
                 Node::Num {
                     // take the inverse by swapping numerator and denominator
                     val: BigRational::new(denom, numer),
                     input_base,
                 }
             }
-            // inverse of inverse = identity
-            Node::Inverse(b) => *b,
-            // cannot simplify
-            node => Node::Inverse(Box::new(node)),
+            // we cannot simplify
+            (a, b) => Node::Exp(Box::new(a), Box::new(b)),
         },
 
         Node::Sin(ref inner) | Node::Cos(ref inner) | Node::Tan(ref inner) => {
@@ -387,7 +376,7 @@ fn deep_flatten_children(children: Vec<Node>, op_kind: VarOpKind) -> Vec<Node> {
 fn node_factor_heuristic(node: &Node) -> u32 {
     // greater numbers mean "use me as a factor" when factoring
     match node {
-        Node::Inverse(_) | Node::Sin(_) | Node::Cos(_) | Node::Tan(_) => 4,
+        Node::Sin(_) | Node::Cos(_) | Node::Tan(_) => 4,
         Node::VarOp { .. } => 3,
         Node::Const(_) => 2,
         Node::Exp(_, _) => 1,

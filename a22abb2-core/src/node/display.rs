@@ -3,6 +3,7 @@ use std::fmt;
 use std::fmt::{Display, Write};
 
 use super::{ConstKind, Node, VarOpKind};
+use super::util::is_baseless_minus_one;
 
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 enum NodePriority {
@@ -23,12 +24,16 @@ fn get_node_priority(node: &Node) -> NodePriority {
                 NodePriority::MulOrDiv
             }
         }
-        Node::Inverse(_) => NodePriority::MulOrDiv,
         Node::VarOp { kind, .. } => match kind {
             VarOpKind::Add => NodePriority::AddOrSub,
             VarOpKind::Mul => NodePriority::MulOrDiv,
         },
-        Node::Exp(_, _) => NodePriority::Exp,
+        Node::Exp(_, b) => if is_baseless_minus_one(b) {
+            // will show as inverse
+            NodePriority::MulOrDiv
+        } else {
+            NodePriority::Exp
+        },
         // functions
         Node::Sin(_) | Node::Cos(_) | Node::Tan(_) => NodePriority::Exp,
     }
@@ -65,15 +70,6 @@ fn write_func(f: &mut fmt::Formatter<'_>, name: &str, inner: &Node) -> fmt::Resu
     write_with_paren(f, inner, NodePriority::Exp, true, true)
 }
 
-fn is_baseless_minus_one(node: &Node) -> bool {
-    if let Node::Num { val, input_base } = node {
-        return ((val.denom().is_one() && *val.numer() == (-1).into())
-            || (*val.denom() == (-1).into() && val.numer().is_one()))
-            && input_base.is_none();
-    }
-    false
-}
-
 impl Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -94,10 +90,6 @@ impl Display for Node {
                         write!(f, "{}", val)
                     }
                 }
-            }
-            Node::Inverse(inner) => {
-                write!(f, "1/")?;
-                write_with_paren(f, inner, get_node_priority(self), true, false)
             }
             Node::VarOp { kind, children } => {
                 let mut first = true;
@@ -150,14 +142,15 @@ impl Display for Node {
                             }
                             VarOpKind::Mul => {
                                 // detect division
-                                if let Node::Inverse(x) = child {
-                                    // directly output "/ x" instead of "* 1/x"
-                                    write!(f, " / ")?;
-                                    write_with_paren(f, x, NodePriority::MulOrDiv, false, false)?;
-                                    continue;
-                                } else {
-                                    '*'
+                                if let Node::Exp(a, b) = child {
+                                    if is_baseless_minus_one(b) {
+                                        // directly output "/ x" instead of "* 1/x"
+                                        write!(f, " / ")?;
+                                        write_with_paren(f, a, NodePriority::MulOrDiv, false, false)?;
+                                        continue;
+                                    }
                                 }
+                                '*'
                             }
                         };
                         write!(f, " {} ", op_char)?;
@@ -167,10 +160,15 @@ impl Display for Node {
                 Ok(())
             }
             Node::Exp(a, b) => {
-                write_with_paren(f, a, NodePriority::Exp, false, false)?;
-                f.write_char('^')?;
-                write_with_paren(f, b, NodePriority::Exp, false, false)?;
-                Ok(())
+                if is_baseless_minus_one(b) {
+                    // a^-1 = 1/a
+                    write!(f, "1/")?;
+                    write_with_paren(f, a, NodePriority::MulOrDiv, true, false)
+                } else {
+                    write_with_paren(f, a, NodePriority::Exp, false, false)?;
+                    f.write_char('^')?;
+                    write_with_paren(f, b, NodePriority::Exp, false, false)
+                }
             }
             // functions
             Node::Sin(inner) => write_func(f, "sin", inner),

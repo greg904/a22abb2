@@ -1,6 +1,7 @@
+mod display;
 mod simplify;
 pub use self::simplify::*;
-mod display;
+mod util;
 
 use num_rational::BigRational;
 use num_traits::{One, Zero};
@@ -73,7 +74,6 @@ pub enum Node {
         /// by the user
         input_base: Option<u32>,
     },
-    Inverse(Box<Node>),
     VarOp {
         kind: VarOpKind,
         children: Vec<Node>,
@@ -101,7 +101,6 @@ impl Node {
                 val: ratio_to_f64(&val),
                 display_base: *input_base,
             },
-            Node::Inverse(inner) => inner.eval_map(|x| 1.0 / x, true),
             Node::VarOp { kind, children } => Node::eval_var_op(children.iter(), *kind),
             Node::Exp(a, b) => {
                 let a = a.eval();
@@ -197,7 +196,7 @@ impl Node {
     }
 
     pub fn inverse(self) -> Node {
-        Node::Inverse(Box::new(self))
+        Node::Exp(Box::new(self), Box::new(Node::minus_one()))
     }
 
     pub fn sqrt(self) -> Node {
