@@ -41,22 +41,74 @@
                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                   ScrollViewer.VerticalScrollBarVisibility="Auto"
                   Grid.Row="1">
+            <ListView.Header>
+                <RichTextBlock Padding="14,0,14,64">
+                    <Paragraph>
+                        This is a tool to do calculations
+                        and simplifications.
+                    </Paragraph>
+                    <Paragraph>
+                        At the bottom of the window, there is a section to
+                        input a new calculation.
+                    </Paragraph>
+                    <Paragraph>
+                        Write numbers in decimal,
+                        hexadecimal (<Italic>0xFF</Italic>),
+                        octal (<Italic>0o644</Italic>),
+                        or binary (<Italic>0b110</Italic>).
+                    </Paragraph>
+                    <Paragraph>
+                        Use basic operators
+                        (<Italic>+</Italic>,
+                        <Italic>-</Italic>,
+                        <Italic>*</Italic>,
+                        <Italic>/</Italic>,
+                        and <Italic>^</Italic> for exponents),
+                        but also trigonometry functions
+                        (<Italic>sin</Italic>,
+                        <Italic>cos</Italic>,
+                        and <Italic>tan</Italic>),
+                        and root functions
+                        (<Italic>sqrt</Italic>, and
+                        <Italic>cbrt</Italic>).
+                    </Paragraph>
+                    <Paragraph>
+                        Use common constants like
+                        π (<Italic>pi</Italic>),
+                        τ (<Italic>tau</Italic>),
+                        and e (<Italic>e</Italic>).
+                    </Paragraph>
+                    <Paragraph>
+                        The exact result is prepended by a = (equals sign).
+                        An approximation is prepended by a ≈ (approximately equals
+                        to sign).
+                    </Paragraph>
+                    <Paragraph>
+                        Try a complex expression like
+                        <Italic>3e + sin(4pi + 1/2pi)</Italic>
+                        to see how it works.
+                    </Paragraph>
+                </RichTextBlock>
+            </ListView.Header>
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="local:CalculationViewModel">
                     <StackPanel Orientation="Vertical"
                                 Visibility="{x:Bind HistoryVisibility, Mode=OneWay}"
-                                Margin="0,0,14,14">
+                                Padding="14,0,14,24">
                         <TextBlock FontSize="24"
                                    FontWeight="Bold"
                                    Text="{x:Bind Expression, Mode=OneWay}"
+                                   IsTextSelectionEnabled="True"
                                    HorizontalAlignment="Right" />
                         <TextBlock FontSize="20"
                                    Text="{x:Bind SimplifiedExpression, Mode=OneWay}"
                                    Visibility="{x:Bind SimplificationVisibility, Mode=OneWay}"
+                                   IsTextSelectionEnabled="True"
                                    HorizontalAlignment="Right" />
                         <TextBlock FontSize="20"
                                    Text="{x:Bind Approximation, Mode=OneWay}"
                                    Visibility="{x:Bind ApproximationVisibility, Mode=OneWay}"
+                                   IsTextSelectionEnabled="True"
                                    HorizontalAlignment="Right" />
                     </StackPanel>
                 </DataTemplate>

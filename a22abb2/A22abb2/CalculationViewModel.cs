@@ -7,7 +7,7 @@ namespace A22abb2
 {
     public sealed class CalculationViewModel : INotifyPropertyChanged
     {
-        private static Regex WhitespaceRegex = new Regex(@"\s+");
+        private static readonly Regex WhitespaceRegex = new Regex(@"\s+");
 
         private string expression = "";
 
