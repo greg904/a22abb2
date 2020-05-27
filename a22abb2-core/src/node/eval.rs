@@ -64,7 +64,7 @@ pub fn eval(node: &Node) -> Result<EvalSuccess, EvalError> {
             let b_is_one = b.val.approx_eq(
                 1.0,
                 F64Margin {
-                    epsilon: 0.0,
+                    epsilon: 0.0000001,
                     ulps: 2,
                 },
             );
@@ -134,8 +134,13 @@ pub fn eval(node: &Node) -> Result<EvalSuccess, EvalError> {
             ) {
                 return Err(EvalError::Tan90Or270);
             }
+            // to prevent surprises when doing `tan(pi)*99999999`
+            let mut result = original.val.tan();
+            if is_approx_zero(result) {
+                result = 0.0;
+            }
             EvalSuccess {
-                val: original.val.tan(),
+                val: result,
                 display_base: None,
             }
         }
@@ -156,14 +161,31 @@ fn eval_map<F: Fn(f64) -> f64>(
         });
     }
     assert!(!original.val.is_nan());
+    // to prevent surprises when doing `sin(pi)*99999999`
+    let mut result = f(original.val);
+    if is_approx_zero(result) {
+        result = 0.0;
+    }
     Ok(EvalSuccess {
-        val: f(original.val),
+        val: result,
         display_base: if keep_base {
             original.display_base
         } else {
             None
         },
     })
+}
+
+fn is_approx_zero(a: f64) -> bool {
+    a.approx_eq(
+        0.0,
+        // I think that the crate is broken and doesn't calculate
+        // ULPS correctly so I've had to use the epsilon parameter.
+        F64Margin {
+            ulps: 0,
+            epsilon: 0.000001
+        },
+    )
 }
 
 impl Display for EvalSuccess {
