@@ -1,5 +1,4 @@
 use a22abb2_core::lexer::{Lexer, Token};
-use a22abb2_core::node;
 use a22abb2_core::parser::Parser;
 use std::f64;
 use std::ffi::CStr;
@@ -92,12 +91,12 @@ pub unsafe extern fn a22abb2_eval(expr: *const c_char) -> *mut EvalResult {
         Ok(val) => val,
         Err(_) => return Box::into_raw(Box::new(Err(()))),
     };
-    let reduced = node::simplify(root_node);
-    let reduced_str = reduced.to_string();
-    let approx = reduced.eval().val;
+    let simplified = root_node.simplify();
+    let simplified_str = simplified.to_string();
+    let approx = simplified.eval().val;
 
     let r = EvalSuccess {
-        expr_simplified: reduced_str,
+        expr_simplified: simplified_str,
         approx,
     };
     Box::into_raw(Box::new(Ok(r)))

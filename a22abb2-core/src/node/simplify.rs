@@ -6,18 +6,19 @@ use std::iter;
 use std::ops::{Add, Mul};
 
 use super::{ConstKind, Node};
-use super::util::{get_op_result_base, is_minus_one};
+use super::util::{get_op_result_base, is_minus_one, common};
 
+/// Simplifies the node.
 pub fn simplify(node: Node) -> Node {
     match node {
-        Node::Const(ConstKind::Tau) => Node::Const(ConstKind::Pi) * Node::two(),
+        Node::Const(ConstKind::Tau) => Node::Const(ConstKind::Pi) * common::two(),
         Node::Sum(children) => simplify_vararg_op(children, true),
         Node::Product(children) => simplify_vararg_op(children, false),
         Node::Exp(a, b) => match (simplify(*a), simplify(*b)) {
             // 1^k equals 1
-            (Node::Num { ref val, .. }, _) if val.is_one() => Node::one(),
+            (Node::Num { ref val, .. }, _) if val.is_one() => common::one(),
             // k^0 equals 1
-            (_, Node::Num { ref val, .. }) if val.is_zero() => Node::one(),
+            (_, Node::Num { ref val, .. }) if val.is_zero() => common::one(),
             // (c^d)^b = c^(d*b)
             (Node::Exp(c, d), b) => {
                 let new_exp = simplify((*d) * b);
@@ -57,31 +58,31 @@ pub fn simplify(node: Node) -> Node {
                 }
                 if pi_factor.is_zero() {
                     return match &node {
-                        Node::Sin(_) => Node::zero(),
-                        Node::Cos(_) => Node::one(),
-                        Node::Tan(_) => Node::zero(),
+                        Node::Sin(_) => common::zero(),
+                        Node::Cos(_) => common::one(),
+                        Node::Tan(_) => common::zero(),
                         _ => unreachable!(),
                     };
                 } else if pi_factor.is_one() {
                     return match &node {
-                        Node::Sin(_) => Node::zero(),
-                        Node::Cos(_) => Node::minus_one(),
-                        Node::Tan(_) => Node::zero(),
+                        Node::Sin(_) => common::zero(),
+                        Node::Cos(_) => common::minus_one(),
+                        Node::Tan(_) => common::zero(),
                         _ => unreachable!(),
                     };
                 } else if *pi_factor.denom() == 2.into() {
                     // could be 1/2 or 3/2
                     return if pi_factor.numer().is_one() {
                         match &node {
-                            Node::Sin(_) => Node::one(),
-                            Node::Cos(_) => Node::zero(),
+                            Node::Sin(_) => common::one(),
+                            Node::Cos(_) => common::zero(),
                             Node::Tan(_) => todo!("handle errors gracefully"),
                             _ => unreachable!(),
                         }
                     } else {
                         match &node {
-                            Node::Sin(_) => Node::minus_one(),
-                            Node::Cos(_) => Node::zero(),
+                            Node::Sin(_) => common::minus_one(),
+                            Node::Cos(_) => common::zero(),
                             Node::Tan(_) => todo!("handle errors gracefully"),
                             _ => unreachable!(),
                         }
@@ -93,12 +94,12 @@ pub fn simplify(node: Node) -> Node {
                     let is_top = *pi_factor.numer() < 3.into();
 
                     return match &node {
-                        Node::Sin(_) if is_top => Node::three().sqrt() / Node::two(),
-                        Node::Sin(_) if !is_top => -Node::three().sqrt() / Node::two(),
-                        Node::Cos(_) if !is_left => Node::two().inverse(),
-                        Node::Cos(_) if is_left => -Node::two().inverse(),
-                        Node::Tan(_) if is_top != is_left => Node::three().sqrt(),
-                        Node::Tan(_) if is_top == is_left => -Node::three().sqrt(),
+                        Node::Sin(_) if is_top => common::three().sqrt() / common::two(),
+                        Node::Sin(_) if !is_top => -common::three().sqrt() / common::two(),
+                        Node::Cos(_) if !is_left => common::two().inverse(),
+                        Node::Cos(_) if is_left => -common::two().inverse(),
+                        Node::Tan(_) if is_top != is_left => common::three().sqrt(),
+                        Node::Tan(_) if is_top == is_left => -common::three().sqrt(),
                         _ => unreachable!(),
                     };
                 } else if *pi_factor.denom() == 4.into() {
@@ -108,12 +109,12 @@ pub fn simplify(node: Node) -> Node {
                     let is_top = *pi_factor.numer() < 4.into();
 
                     return match &node {
-                        Node::Sin(_) if is_top => Node::two().sqrt().inverse(),
-                        Node::Sin(_) if !is_top => -Node::two().sqrt().inverse(),
-                        Node::Cos(_) if !is_left => Node::two().sqrt().inverse(),
-                        Node::Cos(_) if is_left => -Node::two().sqrt().inverse(),
-                        Node::Tan(_) if is_top != is_left => Node::one(),
-                        Node::Tan(_) if is_top == is_left => Node::minus_one(),
+                        Node::Sin(_) if is_top => common::two().sqrt().inverse(),
+                        Node::Sin(_) if !is_top => -common::two().sqrt().inverse(),
+                        Node::Cos(_) if !is_left => common::two().sqrt().inverse(),
+                        Node::Cos(_) if is_left => -common::two().sqrt().inverse(),
+                        Node::Tan(_) if is_top != is_left => common::one(),
+                        Node::Tan(_) if is_top == is_left => common::minus_one(),
                         _ => unreachable!(),
                     };
                 } else if *pi_factor.denom() == 6.into() {
@@ -123,12 +124,12 @@ pub fn simplify(node: Node) -> Node {
                     let is_top = *pi_factor.numer() < 6.into();
 
                     return match &node {
-                        Node::Sin(_) if is_top => Node::two().inverse(),
-                        Node::Sin(_) if !is_top => -Node::two().inverse(),
-                        Node::Cos(_) if !is_left => Node::three().sqrt() / Node::two(),
-                        Node::Cos(_) if is_left => -Node::three().sqrt() / Node::two(),
-                        Node::Tan(_) if is_top != is_left => Node::three().sqrt().inverse(),
-                        Node::Tan(_) if is_top == is_left => -Node::three().sqrt().inverse(),
+                        Node::Sin(_) if is_top => common::two().inverse(),
+                        Node::Sin(_) if !is_top => -common::two().inverse(),
+                        Node::Cos(_) if !is_left => common::three().sqrt() / common::two(),
+                        Node::Cos(_) if is_left => -common::three().sqrt() / common::two(),
+                        Node::Tan(_) if is_top != is_left => common::three().sqrt().inverse(),
+                        Node::Tan(_) if is_top == is_left => -common::three().sqrt().inverse(),
                         _ => unreachable!(),
                     };
                 }
@@ -306,14 +307,14 @@ where I: IntoIterator<Item = Node> {
 
                 // Fallback to a factor of 1 because it doesn't
                 // change the end value.
-                child => (child, Node::one()),
+                child => (child, common::one()),
             }
         } else {
             match child {
                 Node::Exp(a, b) => (*a, *b),
                 // Fallback to a power of 1 because it doesn't
                 // change the end value.
-                child => (child, Node::one()),
+                child => (child, common::one()),
             }
         };
 

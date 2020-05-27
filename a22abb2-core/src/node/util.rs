@@ -40,3 +40,45 @@ where I: Iterator<Item = &'a Node>,
         display_base: acc_base,
     }
 }
+
+pub(crate) mod common {
+    use num_rational::BigRational;
+    use num_traits::{One, Zero};
+
+    use crate::node::Node;
+
+    pub(crate) fn zero() -> Node {
+        Node::Num {
+            val: Zero::zero(),
+            input_base: None,
+        }
+    }
+
+    pub(crate) fn one() -> Node {
+        Node::Num {
+            val: One::one(),
+            input_base: None,
+        }
+    }
+
+    pub(crate) fn two() -> Node {
+        Node::Num {
+            val: BigRational::from_integer(2.into()),
+            input_base: None,
+        }
+    }
+
+    pub(crate) fn three() -> Node {
+        Node::Num {
+            val: BigRational::from_integer(3.into()),
+            input_base: None,
+        }
+    }
+
+    pub(crate) fn minus_one() -> Node {
+        Node::Num {
+            val: -BigRational::one(),
+            input_base: None,
+        }
+    }
+}
