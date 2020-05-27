@@ -8,7 +8,15 @@ namespace A22abb2
 {
     public sealed class CalculationViewModel : INotifyPropertyChanged
     {
-        private static readonly Regex WhitespaceRegex = new Regex(@"\s+");
+        // Remove whitespace and parentheses, which can change when the node is
+        // parsed and dumped back.
+        // Note that this is not a very good way to check if two expressions
+        // are different.
+        // In the long term, we should really make it so that the Rust core
+        // returns whether it did anything to the node to simplify it and
+        // whether the evaluation folded nodes into numbers instead of
+        // guessing with this heuristic.
+        private static readonly Regex ExpressionNormalizeRegex = new Regex(@"[\s()]");
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -96,14 +104,14 @@ namespace A22abb2
 
             // Only show the parts that are useful, which are the parts that
             // are not the same as the expression that the user typed.
-            var expressionNormalized = WhitespaceRegex.Replace(this.expression, "");
+            var expressionNormalized = ExpressionNormalizeRegex.Replace(this.expression, "");
             var resultParts = new List<string>();
-            var simplificationNormalized = WhitespaceRegex.Replace(evalResult.SimplifiedExpression, "");
+            var simplificationNormalized = ExpressionNormalizeRegex.Replace(evalResult.SimplifiedExpression, "");
             if (!expressionNormalized.Equals(simplificationNormalized))
             {
                 resultParts.Add($"= {evalResult.SimplifiedExpression}");
             }
-            var approximationNormalized = WhitespaceRegex.Replace(evalResult.Approximation.ToString(), "");
+            var approximationNormalized = ExpressionNormalizeRegex.Replace(evalResult.Approximation.ToString(), "");
             if (!expressionNormalized.Equals(approximationNormalized) && !simplificationNormalized.Equals(approximationNormalized))
             {
                 resultParts.Add($"≈ {evalResult.Approximation}");
