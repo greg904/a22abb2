@@ -1,4 +1,5 @@
 extern crate either;
+extern crate float_cmp;
 extern crate num_bigint;
 extern crate num_integer;
 extern crate num_rational;

@@ -1,3 +1,4 @@
+use float_cmp::{ApproxEq, F64Margin};
 use num_traits::Float;
 use std::f64::consts::{E, PI};
 use std::fmt;
@@ -22,6 +23,7 @@ pub struct EvalSuccess {
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum EvalError {
     ZeroToThePowerOfZero,
+    Tan90Or270,
 }
 
 /// Approximates the node value.
@@ -44,20 +46,20 @@ pub fn eval(node: &Node) -> Result<EvalSuccess, EvalError> {
         Node::Exp(a, b) => {
             let a = eval(a)?;
             let b = eval(b)?;
-            if b.val == 0.0 {
-                if a.val == 0.0 {
+            if b.val.approx_eq(0.0, F64Margin { epsilon: 0.0, ulps: 2 }) {
+                if a.val.approx_eq(0.0, F64Margin { epsilon: 0.0, ulps: 2 }) {
                     return Err(EvalError::ZeroToThePowerOfZero);
                 }
                 return Ok(EvalSuccess {
                     val: 1.0,
                     display_base: a.display_base,
                 });
-            } else if b.val == 1.0 {
+            } else if b.val.approx_eq(1.0, F64Margin { epsilon: 0.0, ulps: 3 }) {
                 return Ok(EvalSuccess {
                     val: a.val,
                     display_base: a.display_base,
                 });
-            } else if b.val == -1.0 {
+            } else if b.val.approx_eq(-1.0, F64Margin { epsilon: 0.0, ulps: 3 }) {
                 return Ok(EvalSuccess {
                     val: 1.0 / a.val,
                     display_base: a.display_base,
@@ -70,12 +72,42 @@ pub fn eval(node: &Node) -> Result<EvalSuccess, EvalError> {
         }
         Node::Sin(inner) => eval_map(inner, f64::sin, false)?,
         Node::Cos(inner) => eval_map(inner, f64::cos, false)?,
-        Node::Tan(inner) => eval_map(inner, f64::tan, false)?,
+        Node::Tan(inner) => {
+            let original = eval(inner)?;
+            if original.val.is_infinite() {
+                // don't even try anymore
+                return Ok(EvalSuccess {
+                    val: 0.0,
+                    display_base: None,
+                });
+            }
+            assert!(!original.val.is_nan());
+            // check if angle is k(2pi) + pi/2 or k(2pi) + 3*pi/2
+            let n = (original.val / (PI * 2.0)).floor();
+            let impossible1 = n * (PI * 2.0) + PI / 2.0;
+            let impossible2 = n * (PI * 2.0) + 3.0 * PI / 2.0;
+            if original.val.approx_eq(impossible1, F64Margin { epsilon: 0.0, ulps: 3 }) ||
+                original.val.approx_eq(impossible2, F64Margin { epsilon: 0.0, ulps: 3 }) {
+                return Err(EvalError::Tan90Or270);
+            }
+            EvalSuccess {
+                val: original.val.tan(),
+                display_base: None,
+            }
+        },
     })
 }
 
 fn eval_map<F: Fn(f64) -> f64>(node: &Node, f: F, keep_base: bool) -> Result<EvalSuccess, EvalError> {
     let original = eval(node)?;
+    if original.val.is_infinite() {
+        // don't even try anymore
+        return Ok(EvalSuccess {
+            val: 0.0,
+            display_base: None,
+        });
+    }
+    assert!(!original.val.is_nan());
     Ok(EvalSuccess {
         val: f(original.val),
         display_base: if keep_base {
@@ -163,5 +195,41 @@ impl Display for EvalSuccess {
                 self.val.fmt(out)
             },
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use num_rational::BigRational;
+
+    use crate::node::util::common;
+    use super::*;
+
+    #[test]
+    fn it_errors_with_pow_0_0() {
+        // 0^0
+        let input = Node::Exp(Box::new(common::zero()), Box::new(common::zero()));
+        let result = eval(&input);
+        assert_eq!(result, Err(EvalError::ZeroToThePowerOfZero));
+    }
+
+    #[test]
+    fn it_errors_with_impossible_tangent_inside_0_2pi() {
+        // tan(pi/2)
+        let input = Node::Tan(Box::new(Node::Const(ConstKind::Pi) / common::two()));
+        let result = eval(&input);
+        assert_eq!(result, Err(EvalError::Tan90Or270));
+    }
+
+    #[test]
+    fn it_errors_with_impossible_tangent_outside_0_2pi() {
+        // tan(97pi/2)
+        let ninety_seven = Node::Num {
+            val: BigRational::from_integer(97.into()),
+            input_base: Some(10)
+        };
+        let input = Node::Tan(Box::new(ninety_seven * Node::Const(ConstKind::Pi) / common::two()));
+        let result = eval(&input);
+        assert_eq!(result, Err(EvalError::Tan90Or270));
     }
 }

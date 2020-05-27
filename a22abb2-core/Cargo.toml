@@ -8,8 +8,9 @@ license = "MIT"
 publish = false
 
 [dependencies]
+either = "1.5.3"
+float-cmp = "0.8.0"
 num-bigint = "0.2.6"
+num-integer = "0.1.42"
 num-rational = "0.2.4"
 num-traits = "0.2.11"
-num-integer = "0.1.42"
-either = "1.5.3"

@@ -12,6 +12,7 @@ use super::util::{get_op_result_base, is_minus_one, common};
 /// A description of an error that happened while trying to simplify a node.
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum SimplifyError {
+    ZeroToThePowerOfZero,
     Tan90Or270,
 }
 
@@ -448,6 +449,7 @@ fn node_factor_heuristic(node: &Node) -> u32 {
 
 #[cfg(test)]
 mod tests {
+    use crate::node::EvalError;
     use super::*;
 
     #[test]
@@ -508,11 +510,11 @@ mod tests {
         const TRIGO_FUNCS: [&dyn Fn(Box<Node>) -> Node; 3] = [&Node::Sin, &Node::Cos, &Node::Tan];
         for func in &TRIGO_FUNCS {
             let node = func(Box::new(input.clone()));
-            let ground_truth = node.eval().unwrap();
-            if ground_truth.val.abs() > 99999999.0 {
-                // impossible tangeant
-                continue;
-            }
+            let ground_truth = match node.eval() {
+                Ok(x) => x,
+                Err(EvalError::Tan90Or270) => continue,
+                Err(err) => panic!("got unexpected error: {:?}", err),
+            };
             let simplified = simplify(node).unwrap().eval().unwrap();
             assert!(
                 (simplified.val - ground_truth.val).abs() < 0.001,
