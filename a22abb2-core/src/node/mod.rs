@@ -11,7 +11,7 @@ use self::simplify::*;
 use self::util::common;
 
 /// A constant in mathematics
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
 pub enum ConstKind {
     Pi,
     Tau,
