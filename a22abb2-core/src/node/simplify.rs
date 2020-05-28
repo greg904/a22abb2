@@ -407,6 +407,22 @@ where
         .into_iter()
         .map(simplify)
         .collect::<Result<Vec<Node>, _>>()?;
+
+    if !is_sum {
+        for child in children.iter() {
+            if let Node::Num { val, .. } = child {
+                if val.is_zero() {
+                    // Zero short circuits multiplication.
+                    // Note: we return `child` instead of `common::zero` because
+                    // we want to preverve it's base.
+                    // TODO: is this actually wanted
+                    // TODO: maybe we should not be ignoring the base of the
+                    //  next terms
+                    return Ok(child.clone());
+                }
+            }
+        }
+    }
     let acc_f = if is_sum { Add::add } else { Mul::mul };
     let children = group_and_fold_numbers(children.into_iter(), acc_f);
 
