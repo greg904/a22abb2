@@ -24,8 +24,20 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
         Node::Sum(children) => simplify_vararg_op(children, true)?,
         Node::Product(children) => simplify_vararg_op(children, false)?,
         Node::Exp(a, b) => match (simplify(*a)?, simplify(*b)?) {
-            // 1^k equals 1
-            (Node::Num { ref val, .. }, _) if val.is_one() => common::one(),
+            // 1^x = 1
+            (Node::Num { val, .. }, _) if val.is_one() => common::one(),
+            // x^1 = x
+            (lhs, Node::Num { val, .. }) if val.is_one() => lhs,
+            // (a/b)^-1 = b/a
+            (Node::Num { val, input_base }, rhs) if is_minus_one(&rhs) => {
+                let (numer, denom) = val.into();
+                Node::Num {
+                    val: BigRational::new(denom, numer),
+                    input_base,
+                }
+            }
+            // our constants are never zero, so we won't have 0^0
+            (Node::Const(_), Node::Num { val, .. }) if val.is_zero() => common::one(),
             // actually compute the exponent result
             (
                 Node::Num {
@@ -37,8 +49,18 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
                     input_base: input_base_b,
                 },
             ) => {
-                if val_a.is_zero() && !val_b.is_positive() {
-                    return Err(SimplifyError::ZeroToPowerOfNonPositive);
+                if val_a.is_zero() {
+                    if val_b.is_positive() {
+                        // 0^x = 0 when x > 0
+                        return Ok(common::zero());
+                    } else {
+                        // 0^(-1) is undefined
+                        return Err(SimplifyError::ZeroToPowerOfNonPositive);
+                    }
+                }
+                // x^0 = 1
+                if val_b.is_zero() {
+                    return Ok(common::one());
                 }
                 fn ratio_to_i32(ratio: &BigRational) -> Option<i32> {
                     if ratio.denom().is_one() {
@@ -144,8 +166,6 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
                     }),
                 )
             }
-            // k^0 equals 1
-            (_, Node::Num { ref val, .. }) if val.is_zero() => common::one(),
             // (c^d)^b = c^(d*b)
             (Node::Exp(c, d), b) => {
                 let new_exp = simplify((*d) * b)?;
@@ -159,14 +179,6 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
                     }
                 }
                 Node::Exp(c, Box::new(new_exp))
-            }
-            (Node::Num { val, input_base }, rhs) if is_minus_one(&rhs) => {
-                let (numer, denom) = val.into();
-                Node::Num {
-                    // take the inverse by swapping numerator and denominator
-                    val: BigRational::new(denom, numer),
-                    input_base,
-                }
             }
             // we cannot simplify
             (a, b) => Node::Exp(Box::new(a), Box::new(b)),
