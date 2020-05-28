@@ -232,7 +232,7 @@ fn main() {
                         return;
                     }
 
-                    unique_nodes.insert(node);
+                    unique_nodes.insert(node.to_string());
                 }
             }
         }
