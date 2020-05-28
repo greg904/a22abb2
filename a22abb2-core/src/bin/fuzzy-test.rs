@@ -12,8 +12,12 @@ struct RecursiveCtx {
     pub depth: u32,
     pub inside_trigo: bool,
     pub inside_exp: u32,
+
     pub inside_sum: u32,
+    pub direct_child_sum: bool,
+
     pub inside_product: u32,
+    pub direct_child_product: bool,
 }
 
 fn random_const(ctx: &RecursiveCtx) -> ConstKind {
@@ -67,7 +71,7 @@ fn random_vararg_op(ctx: RecursiveCtx, is_sum: bool) -> Node {
     let mut rng = thread_rng();
 
     let mut children = Vec::new();
-    let count = if ctx.inside_exp == 0 {
+    let count = if ctx.inside_exp == 0 && !ctx.inside_trigo {
         rng.gen_range(2, 7)
     } else {
         // prevent big numbers
@@ -86,20 +90,34 @@ fn random_vararg_op(ctx: RecursiveCtx, is_sum: bool) -> Node {
 
 fn random_node(ctx: RecursiveCtx) -> Node {
     let mut rng = thread_rng();
-    // limit the amount of node depth
-    if ctx.depth < 5 && rng.gen_range(0, 10) > 2 {
+    // The condition below serves two purposes:
+    // - limit the amount of node depth
+    // - force at least one composite node, otherwise the calculation is boring
+    if ctx.depth == 0 || (ctx.depth < 5 && ctx.inside_exp < 2 && rng.gen_range(0, 10) > 2) {
         // pick a composite node
         match rng.gen_range(0, 6) {
-            0 if ctx.inside_sum < 3 => return random_vararg_op(ctx, true),
-            1 if ctx.inside_product < 3 => return random_vararg_op(ctx, false),
-            2 if ctx.inside_exp < 2 => return Node::Exp(
-                Box::new(random_node(ctx.for_exp_call())),
-                Box::new(random_node(ctx.for_exp_call())),
-            ),
-            3 => return Node::Sin(Box::new(random_node(ctx.for_trigo_call()))),
-            4 => return Node::Cos(Box::new(random_node(ctx.for_trigo_call()))),
-            5 => return Node::Tan(Box::new(random_node(ctx.for_trigo_call()))),
+            0 if ctx.inside_sum < 3 && !ctx.direct_child_sum => return random_vararg_op(ctx, true),
+            1 if ctx.inside_product < 3 && !ctx.direct_child_product => return random_vararg_op(ctx, false),
+            2 if ctx.inside_exp == 0 || !ctx.inside_trigo => {
+                return Node::Exp(
+                    Box::new(random_node(ctx.for_exp_call())),
+                    Box::new(random_node(ctx.for_exp_call())),
+                );
+            }
+            3 if !ctx.inside_trigo => {
+                return Node::Sin(Box::new(random_node(ctx.for_trigo_call())));
+            }
+            4 if !ctx.inside_trigo => {
+                return Node::Cos(Box::new(random_node(ctx.for_trigo_call())));
+            }
+            5 if !ctx.inside_trigo => {
+                return Node::Tan(Box::new(random_node(ctx.for_trigo_call())));
+            },
             _ => {},
+        }
+        if ctx.depth == 0 {
+            // retry, because we really want one
+            return random_node(ctx);
         }
     }
     // pick leaf node
@@ -119,8 +137,12 @@ impl RecursiveCtx {
             depth: 0,
             inside_trigo: false,
             inside_exp: 0,
+
             inside_sum: 0,
+            direct_child_sum: false,
+
             inside_product: 0,
+            direct_child_product: false,
         }
     }
 
@@ -129,8 +151,12 @@ impl RecursiveCtx {
             depth: self.depth + 1,
             inside_trigo: true,
             inside_exp: self.inside_exp,
+
             inside_sum: self.inside_sum,
+            direct_child_sum: false,
+
             inside_product: self.inside_product,
+            direct_child_product: false,
         }
     }
 
@@ -139,8 +165,12 @@ impl RecursiveCtx {
             depth: self.depth + 1,
             inside_trigo: self.inside_trigo,
             inside_exp: self.inside_exp + 1,
+
             inside_sum: self.inside_sum,
+            direct_child_sum: false,
+
             inside_product: self.inside_product,
+            direct_child_product: false,
         }
     }
 
@@ -149,8 +179,20 @@ impl RecursiveCtx {
             depth: self.depth + 1,
             inside_trigo: self.inside_trigo,
             inside_exp: self.inside_exp,
-            inside_sum: if is_sum { self.inside_sum + 1 } else { self.inside_sum },
-            inside_product: if !is_sum { self.inside_product + 1 } else { self.inside_product },
+
+            inside_sum: if is_sum {
+                self.inside_sum + 1
+            } else {
+                self.inside_sum
+            },
+            direct_child_sum: is_sum,
+
+            inside_product: if !is_sum {
+                self.inside_product + 1
+            } else {
+                self.inside_product
+            },
+            direct_child_product: !is_sum,
         }
     }
 }
@@ -181,12 +223,13 @@ fn main() {
                     let mut is_equal = false;
                     is_equal |= (simplified_result.val - ground_truth.val).abs() < 0.1;
                     if ground_truth.val != 0.0 {
-                        let rel_error = ((simplified_result.val - ground_truth.val) / ground_truth.val).abs();
+                        let rel_error =
+                            ((simplified_result.val - ground_truth.val) / ground_truth.val).abs();
                         is_equal |= rel_error < 0.1;
                     }
                     assert!(is_equal);
-                    // TODO: uncomment
-                    // assert_eq!(simplified_result.display_base, ground_truth.display_base);
+                // TODO: uncomment
+                // assert_eq!(simplified_result.display_base, ground_truth.display_base);
                 } else {
                     println!("- eval after simplification: (error)");
                 }
