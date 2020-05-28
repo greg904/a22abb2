@@ -85,8 +85,8 @@ impl Display for Node {
                     8 if val.is_integer() => write!(f, "{:#o}", val.numer()),
                     10 => write!(f, "{}", val),
                     16 if val.is_integer() => write!(f, "{:#X}", val.numer()),
-                    _ => {
-                        eprintln!("warning: doesn't know how to print number in base");
+                    input_base => {
+                        eprintln!("warning: cannot print BigRational in base {} yet", input_base);
                         write!(f, "{}", val)
                     }
                 }

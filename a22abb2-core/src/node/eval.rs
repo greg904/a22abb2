@@ -190,10 +190,8 @@ fn is_approx_zero(a: f64) -> bool {
 
 impl Display for EvalSuccess {
     fn fmt(&self, out: &mut Formatter) -> fmt::Result {
+        // TODO: add tests
         match self.display_base.unwrap_or(10) {
-            10 => self.val.fmt(out),
-
-            // TODO: add tests
             2 => {
                 let (mantissa, exp, sign) = self.val.integer_decode();
                 let is_nonnegative = sign == 1 || mantissa == 0;
@@ -260,9 +258,13 @@ impl Display for EvalSuccess {
 
                 out.pad_integral(is_nonnegative, "0b", &result)
             }
-            _ => {
-                eprintln!("cannot print result in bases other than 10 and two yet");
-                self.val.fmt(out)
+            display_base => {
+                if display_base != 10 {
+                    eprintln!("warning: cannot print float in base {} yet", display_base);
+                }
+                let mut buf = ryu::Buffer::new();
+                let printed = buf.format(self.val);
+                out.write_str(printed) 
             }
         }
     }

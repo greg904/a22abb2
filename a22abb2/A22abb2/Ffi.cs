@@ -13,25 +13,25 @@ namespace A22abb2
         private static extern bool Native_EvalResult_HasFailed(IntPtr ptr);
 
         [DllImport("a22abb2_ffi.dll", EntryPoint = "a22abb2_evalresult_get_approx", CallingConvention = CallingConvention.Cdecl)]
-        private static extern double Native_EvalResult_GetApprox(IntPtr ptr);
+        private static extern string Native_EvalResult_GetApprox(IntPtr ptr);
 
-        [DllImport("a22abb2_ffi.dll", EntryPoint = "a22abb2_evalresult_get_expr_simplified", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        private static extern string Native_EvalResult_GetExprSimplified(IntPtr ptr);
+        [DllImport("a22abb2_ffi.dll", EntryPoint = "a22abb2_evalresult_get_simplified_expr", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        private static extern string Native_EvalResult_GetSimplifiedExpr(IntPtr ptr);
 
         [DllImport("a22abb2_ffi.dll", EntryPoint = "a22abb2_eval", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         private static extern IntPtr Native_Eval(string expression);
 
         public struct EvalResult
         {
-            public double Approximation;
+            public string Approximation;
             public string SimplifiedExpression;
 
             public bool HasFailed
             {
-                get => this.SimplifiedExpression == null;
+                get => this.Approximation == null || this.SimplifiedExpression == null;
             }
 
-            public EvalResult(double resultValue, string simplifiedExpression)
+            public EvalResult(string resultValue, string simplifiedExpression)
             {
                 this.Approximation = resultValue;
                 this.SimplifiedExpression = simplifiedExpression;
@@ -52,7 +52,7 @@ namespace A22abb2
                 {
                     // success
                     var approx = Native_EvalResult_GetApprox(ptr);
-                    var simplified = Native_EvalResult_GetExprSimplified(ptr);
+                    var simplified = Native_EvalResult_GetSimplifiedExpr(ptr);
                     return new EvalResult(approx, simplified);
                 }
             }

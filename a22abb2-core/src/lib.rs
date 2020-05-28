@@ -4,6 +4,7 @@ extern crate num_bigint;
 extern crate num_integer;
 extern crate num_rational;
 extern crate num_traits;
+extern crate ryu;
 
 pub mod lexer;
 pub mod node;

@@ -136,7 +136,7 @@ namespace A22abb2
             {
                 resultParts.Add($"= {evalResult.SimplifiedExpression}");
             }
-            var approximationNormalized = ExpressionNormalizeRegex.Replace(evalResult.Approximation.ToString(), "");
+            var approximationNormalized = ExpressionNormalizeRegex.Replace(evalResult.Approximation, "");
             if (!expressionNormalized.Equals(approximationNormalized) && !simplificationNormalized.Equals(approximationNormalized))
             {
                 resultParts.Add($"≈ {evalResult.Approximation}");
