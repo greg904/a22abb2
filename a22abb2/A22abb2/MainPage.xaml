@@ -38,8 +38,8 @@
         <ListView ItemsSource="{x:Bind ViewModel.History}"
                   SelectionMode="None"
                   IsItemClickEnabled="False"
-                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                  ScrollViewer.VerticalScrollBarVisibility="Auto"
+                  ScrollViewer.HorizontalScrollMode="Auto"
+                  ScrollViewer.VerticalScrollMode="Auto"
                   Grid.Row="1">
             <ListView.Header>
                 <RichTextBlock Padding="14,0,14,64">
@@ -100,10 +100,14 @@
                         <TextBlock FontSize="24"
                                    FontWeight="Bold"
                                    Text="{x:Bind ExpressionText, Mode=OneWay}"
+                                   TextWrapping="Wrap"
+                                   TextAlignment="Right"
                                    IsTextSelectionEnabled="True"
                                    HorizontalAlignment="Right" />
                         <TextBlock FontSize="20"
                                    Text="{x:Bind ResultText, Mode=OneWay}"
+                                   TextWrapping="Wrap"
+                                   TextAlignment="Right"
                                    Visibility="{x:Bind ResultVisibility, Mode=OneWay}"
                                    IsTextSelectionEnabled="True"
                                    HorizontalAlignment="Right" />
