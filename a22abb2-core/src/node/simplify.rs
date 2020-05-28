@@ -33,7 +33,7 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
                     return Err(SimplifyError::ZeroToPowerOfNonPositive);
                 }
                 common::one()
-            },
+            }
             // (c^d)^b = c^(d*b)
             (Node::Exp(c, d), b) => {
                 let new_exp = simplify((*d) * b)?;

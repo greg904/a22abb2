@@ -183,7 +183,7 @@ fn is_approx_zero(a: f64) -> bool {
         // ULPS correctly so I've had to use the epsilon parameter.
         F64Margin {
             ulps: 0,
-            epsilon: 0.000001
+            epsilon: 0.000001,
         },
     )
 }

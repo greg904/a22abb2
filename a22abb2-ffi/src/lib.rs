@@ -53,13 +53,11 @@ pub unsafe extern "C" fn a22abb2_evalresult_get_expr_simplified(r: *mut EvalResu
             let chars_with_nul = char_count + 1;
             let bytes = chars_with_nul * mem::size_of::<c_char>();
             let out = slice::from_raw_parts_mut(alloc_csharp_str(bytes), chars_with_nul);
-            
+
             // fill string
             let mut in_bytes = success.expr_simplified.bytes();
             for b in out.iter_mut() {
-                *b = in_bytes.next()
-                    .map(|x| x as c_char)
-                    .unwrap_or(0); // NUL terminator
+                *b = in_bytes.next().map(|x| x as c_char).unwrap_or(0); // NUL terminator
             }
 
             out.as_mut_ptr()
@@ -72,7 +70,7 @@ pub unsafe extern "C" fn a22abb2_evalresult_get_expr_simplified(r: *mut EvalResu
 pub unsafe extern "C" fn a22abb2_eval(expr: *const c_char) -> *mut EvalResult {
     let expr = CStr::from_ptr(expr);
     let expr = expr.to_str().unwrap();
-    
+
     let lexer = Lexer::new(expr);
     let mut tokens: Vec<Token> = Vec::new();
     for result in lexer {
@@ -82,7 +80,7 @@ pub unsafe extern "C" fn a22abb2_eval(expr: *const c_char) -> *mut EvalResult {
         };
         tokens.push(token);
     }
-    
+
     let parser = Parser::new(&tokens);
     let root_node = match parser.parse() {
         Ok(x) => x,
