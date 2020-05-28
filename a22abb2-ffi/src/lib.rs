@@ -8,7 +8,7 @@ use std::slice;
 
 pub struct EvalSuccess {
     simplified_expr: String,
-    approx: String,
+    approx: Option<String>,
 }
 
 type EvalResult = Result<EvalSuccess, ()>;
@@ -50,8 +50,8 @@ unsafe fn alloc_csharp_str(s: &str) -> *mut c_char {
 #[no_mangle]
 pub unsafe extern "C" fn a22abb2_evalresult_get_approx(r: *mut EvalResult) -> *mut c_char {
     match &*r {
-        Ok(success) => alloc_csharp_str(&success.approx),
-        Err(_) => ptr::null_mut(),
+        Ok(EvalSuccess { approx: Some(s), .. }) => alloc_csharp_str(&s),
+        _ => ptr::null_mut(),
     }
 }
 
@@ -87,14 +87,12 @@ pub unsafe extern "C" fn a22abb2_eval(expr: *const c_char) -> *mut EvalResult {
         Ok(x) => x,
         Err(_) => return Box::into_raw(Box::new(Err(()))),
     };
-    let approx = match simplified.eval() {
-        Ok(x) => x.val,
-        Err(_) => return Box::into_raw(Box::new(Err(()))),
-    };
+    let approx = simplified.eval().ok()
+        .map(|x| x.val.to_string());
 
     let r = EvalSuccess {
         simplified_expr: simplified.to_string(),
-        approx: approx.to_string(),
+        approx,
     };
     Box::into_raw(Box::new(Ok(r)))
 }

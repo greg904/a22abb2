@@ -96,21 +96,13 @@ impl<'a> Lexer<'a> {
             return None;
         }
 
-        match IdentKind::from_str(&ident) {
-            Ok(kind) => Some(Ok(Token {
-                kind: TokenKind::Ident(kind),
-                index: original_index,
-            })),
-            Err(_) => {
-                self.index = original_index;
-
-                // error: unknown ident
-                Some(Err(LexerError {
-                    kind: LexerErrorKind::UnknownIdent(ident),
-                    index: original_index,
-                }))
-            }
-        }
+        let token_kind = IdentKind::from_str(&ident)
+            .map(|k| TokenKind::Ident(k))
+            .unwrap_or_else(|_| TokenKind::UnknownIdent(ident));
+        Some(Ok(Token {
+            kind: token_kind,
+            index: original_index,
+        }))
     }
 
     fn get_base_from_char(c: char) -> Option<u32> {

@@ -22,6 +22,7 @@ pub enum ConstKind {
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum Node {
     Const(ConstKind),
+    UnknownConst(String),
     Num {
         /// The number the node represents
         val: BigRational,

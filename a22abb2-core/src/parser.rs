@@ -71,6 +71,7 @@ impl<'a> Parser<'a> {
                     }
                 }
             },
+            TokenKind::UnknownIdent(s) => Node::UnknownConst(s),
 
             TokenKind::Minus => -self.parse_nud()?,
             TokenKind::Plus => self.parse_nud()?,

@@ -15,7 +15,7 @@ enum NodePriority {
 
 fn get_node_priority(node: &Node) -> NodePriority {
     match node {
-        Node::Const(_) => NodePriority::Value,
+        Node::Const(_) | Node::UnknownConst(_) => NodePriority::Value,
         Node::Num { val, .. } => {
             if val.denom().is_one() {
                 NodePriority::Value
@@ -78,6 +78,7 @@ impl Display for Node {
                 ConstKind::Tau => write!(f, "tau"),
                 ConstKind::E => write!(f, "e"),
             },
+            Node::UnknownConst(s) => write!(f, "{}", s),
             Node::Num { val, input_base } => {
                 let input_base = input_base.unwrap_or(10);
                 match input_base {

@@ -538,7 +538,7 @@ fn node_factor_heuristic(node: &Node) -> u32 {
     match node {
         Node::Sin(_) | Node::Cos(_) | Node::Tan(_) => 4,
         Node::Sum(_) | Node::Product(_) => 3,
-        Node::Const(_) => 2,
+        Node::Const(_) | Node::UnknownConst(_) => 2,
         Node::Exp(_, _) => 1,
         _ => 0,
     }

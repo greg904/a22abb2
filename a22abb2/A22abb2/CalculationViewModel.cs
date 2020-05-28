@@ -127,19 +127,26 @@ namespace A22abb2
                 return;
             }
 
-            // Only show the parts that are useful, which are the parts that
-            // are not the same as the expression that the user typed.
             var expressionNormalized = ExpressionNormalizeRegex.Replace(this.expression, "");
             var resultParts = new List<string>();
-            var simplificationNormalized = ExpressionNormalizeRegex.Replace(evalResult.SimplifiedExpression, "");
-            if (!expressionNormalized.Equals(simplificationNormalized))
+            // Only show the parts that are useful, which are the parts that
+            // are not the same as the expression that the user typed.
+            string simplificationNormalized = null;
+            if (evalResult.SimplifiedExpression != null)
             {
-                resultParts.Add($"= {evalResult.SimplifiedExpression}");
+                simplificationNormalized = ExpressionNormalizeRegex.Replace(evalResult.SimplifiedExpression, "");
+                if (!simplificationNormalized.Equals(expressionNormalized))
+                {
+                    resultParts.Add($"= {evalResult.SimplifiedExpression}");
+                }
             }
-            var approximationNormalized = ExpressionNormalizeRegex.Replace(evalResult.Approximation, "");
-            if (!expressionNormalized.Equals(approximationNormalized) && !simplificationNormalized.Equals(approximationNormalized))
+            if (evalResult.Approximation != null)
             {
-                resultParts.Add($"≈ {evalResult.Approximation}");
+                var approximationNormalized = ExpressionNormalizeRegex.Replace(evalResult.Approximation, "");
+                if (!approximationNormalized.Equals(expressionNormalized) && !approximationNormalized.Equals(simplificationNormalized))
+                {
+                    resultParts.Add($"≈ {evalResult.Approximation}");
+                }
             }
 
             if (resultParts.Count > 0)

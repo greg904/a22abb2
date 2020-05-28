@@ -28,7 +28,7 @@ namespace A22abb2
 
             public bool HasFailed
             {
-                get => this.Approximation == null || this.SimplifiedExpression == null;
+                get => this.Approximation == null && this.SimplifiedExpression == null;
             }
 
             public EvalResult(string resultValue, string simplifiedExpression)

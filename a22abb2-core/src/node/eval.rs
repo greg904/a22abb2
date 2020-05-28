@@ -25,6 +25,7 @@ pub enum EvalError {
     ZeroToPowerOfNonPositive,
     ComplexRoot,
     Tan90Or270,
+    UnknownConst,
 }
 
 /// Approximates the node value.
@@ -38,6 +39,7 @@ pub fn eval(node: &Node) -> Result<EvalSuccess, EvalError> {
             },
             display_base: None,
         },
+        Node::UnknownConst(_) => return Err(EvalError::UnknownConst),
         Node::Num { val, input_base } => EvalSuccess {
             val: ratio_to_f64(&val),
             display_base: *input_base,

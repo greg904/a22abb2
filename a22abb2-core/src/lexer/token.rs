@@ -44,6 +44,7 @@ impl FromStr for IdentKind {
 pub enum TokenKind {
     Num { val: BigUrational, input_base: u32 },
     Ident(IdentKind),
+    UnknownIdent(String),
     Plus,
     Minus,
     Times,
