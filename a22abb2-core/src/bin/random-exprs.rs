@@ -7,6 +7,7 @@ use a22abb2_core::node::*;
 use num_rational::BigRational;
 use num_traits::{One, Zero};
 use rand::prelude::*;
+use std::collections::HashSet;
 
 struct RecursiveCtx {
     pub depth: u32,
@@ -40,15 +41,15 @@ fn random_num(ctx: &RecursiveCtx) -> BigRational {
         0 => Zero::zero(),
         1 => One::one(),
         x => {
-            // If we're in a trigonometry function, we don't want enormous
-            // numbers.
-            if !ctx.inside_trigo && x == 9 {
-                return BigRational::from_integer(rng.gen::<i32>().into());
-            }
             // If we're in a exponential function, we really don't want big
             // numbers.
             if ctx.inside_exp > 0 {
                 return BigRational::from_integer(rng.gen_range(-3, 4).into());
+            }
+            // If we're in a trigonometry function, we don't want enormous
+            // numbers.
+            if !ctx.inside_trigo && x == 9 {
+                return BigRational::from_integer(rng.gen::<i32>().into());
             }
             BigRational::from_integer(rng.gen_range(-100, 100).into())
         }
@@ -97,12 +98,19 @@ fn random_node(ctx: RecursiveCtx) -> Node {
         // pick a composite node
         match rng.gen_range(0, 6) {
             0 if ctx.inside_sum < 3 && !ctx.direct_child_sum => return random_vararg_op(ctx, true),
-            1 if ctx.inside_product < 3 && !ctx.direct_child_product => return random_vararg_op(ctx, false),
-            2 if ctx.inside_exp == 0 || !ctx.inside_trigo => {
-                return Node::Exp(
+            1 if ctx.inside_product < 3 && !ctx.direct_child_product => {
+                return random_vararg_op(ctx, false)
+            }
+            2 if !ctx.inside_trigo => {
+                let maybe = Node::Exp(
                     Box::new(random_node(ctx.for_exp_call())),
                     Box::new(random_node(ctx.for_exp_call())),
                 );
+                // prevent extremely large numbers
+                let limit = if ctx.inside_exp == 0 { 2.0 } else { 1000.0 };
+                if maybe.eval().map(|x| x.val.abs() <= limit).unwrap_or(false) {
+                    return maybe;
+                }
             }
             3 if !ctx.inside_trigo => {
                 return Node::Sin(Box::new(random_node(ctx.for_trigo_call())));
@@ -112,8 +120,8 @@ fn random_node(ctx: RecursiveCtx) -> Node {
             }
             5 if !ctx.inside_trigo => {
                 return Node::Tan(Box::new(random_node(ctx.for_trigo_call())));
-            },
-            _ => {},
+            }
+            _ => {}
         }
         if ctx.depth == 0 {
             // retry, because we really want one
@@ -198,46 +206,39 @@ impl RecursiveCtx {
 }
 
 fn main() {
-    for i in 0..5000 {
+    let mut unique_nodes = HashSet::new();
+    while unique_nodes.len() < 8000 {
         let node = random_node(RecursiveCtx::new());
-
-        if i != 0 {
-            println!("");
-        }
-        println!("Testing {}:\n", node);
-
+        // first round of checking if it can be evaluated
         if let Ok(ground_truth) = node.eval() {
-            println!("- eval before simplification: {}", ground_truth);
-
             // will cause precision errors and other weird errors
             if !ground_truth.val.is_finite() {
-                continue;
+                eprintln!("warning: generated node with infinite approximation: {}", node);
+                return;
             }
-
-            if let Ok(simplified) = node.simplify() {
-                println!("- simplified expression: {}", simplified);
-
+            // make sure that it can be simplified
+            if let Ok(simplified) = node.clone().simplify() {
+                // second round of checking if it can be evaluated
                 if let Ok(simplified_result) = simplified.eval() {
-                    println!("- eval after simplification: {}", simplified_result.val);
-
-                    let mut is_equal = false;
-                    is_equal |= (simplified_result.val - ground_truth.val).abs() < 0.1;
-                    if ground_truth.val != 0.0 {
+                    // BTW, let's check if we simplified correctly
+                    let mut is_equal = (simplified_result.val - ground_truth.val).abs() < 0.1;
+                    if !is_equal && ground_truth.val != 0.0 {
                         let rel_error =
                             ((simplified_result.val - ground_truth.val) / ground_truth.val).abs();
-                        is_equal |= rel_error < 0.1;
+                        is_equal = rel_error < 0.1;
                     }
-                    assert!(is_equal);
-                // TODO: uncomment
-                // assert_eq!(simplified_result.display_base, ground_truth.display_base);
-                } else {
-                    println!("- eval after simplification: (error)");
+                    if !is_equal {
+                        eprintln!("warning: incorrect simplification for {}: got {} which evaluates to {} instead of {}", node, simplified, simplified_result.val, ground_truth.val);
+                        return;
+                    }
+
+                    unique_nodes.insert(node);
                 }
-            } else {
-                println!("- simplified expression: (error)");
             }
-        } else {
-            println!("- eval before simplification: (error)");
         }
+    }
+
+    for s in unique_nodes.into_iter() {
+        println!("{}", s);
     }
 }
