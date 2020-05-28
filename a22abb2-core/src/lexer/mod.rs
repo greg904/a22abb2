@@ -12,7 +12,6 @@ pub use self::token::*;
 #[derive(Debug, PartialEq, Eq)]
 pub enum LexerErrorKind {
     UnknownToken,
-    UnknownIdent(String),
 }
 
 /// When the expression is malformed, the lexer will return this error.
@@ -583,8 +582,8 @@ mod tests {
         );
         assert_eq!(
             lexer.next(),
-            Some(Err(LexerError {
-                kind: LexerErrorKind::UnknownIdent("zzz".to_string()),
+            Some(Ok(Token {
+                kind: TokenKind::UnknownIdent("zzz".to_string()),
                 index: 7
             }))
         );

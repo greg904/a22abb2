@@ -6,7 +6,7 @@ use std::convert::{TryFrom, TryInto};
 use std::iter;
 use std::ops::{Add, Mul};
 
-use super::util::{common, get_op_result_base, is_minus_one};
+use super::util::{common, get_op_result_base, is_minus_one, is_two};
 use super::{ConstKind, Node};
 
 /// A description of an error that happened while trying to simplify a node.
@@ -180,8 +180,22 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
                 }
                 Node::Exp(c, Box::new(new_exp))
             }
-            // we cannot simplify
-            (a, b) => Node::Exp(Box::new(a), Box::new(b)),
+            (lhs, rhs) => {
+                if is_two(&rhs) {
+                    if let Node::Sum(children) = &lhs {
+                        if children.len() == 2 {
+                            // (a+b)^2 = a^2 + 2ab + b^2
+                            let a = children[0].clone();
+                            let b = children[1].clone();
+                            return Ok(Node::Exp(Box::new(a.clone()), Box::new(common::two())) +
+                                common::two() * a * b.clone() +
+                                Node::Exp(Box::new(b), Box::new(common::two())));
+                        }
+                    }
+                }
+                // we cannot simplify
+                Node::Exp(Box::new(lhs), Box::new(rhs))
+            },
         },
 
         Node::Sin(ref inner) | Node::Cos(ref inner) | Node::Tan(ref inner) => {
