@@ -26,29 +26,7 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
         Node::Exp(a, b) => match (simplify(*a)?, simplify(*b)?) {
             // 1^k equals 1
             (Node::Num { ref val, .. }, _) if val.is_one() => common::one(),
-            // k^0 equals 1
-            (_, Node::Num { ref val, .. }) if val.is_zero() => {
-                if val.is_zero() {
-                    // 0^0 is undefined
-                    return Err(SimplifyError::ZeroToPowerOfNonPositive);
-                }
-                common::one()
-            }
-            // (c^d)^b = c^(d*b)
-            (Node::Exp(c, d), b) => {
-                let new_exp = simplify((*d) * b)?;
-                if let Node::Num { val, input_base } = &new_exp {
-                    // We cannot simplify if it changes the display base of the
-                    // result!
-                    let will_not_change_base = input_base.map(|x| x == 10).unwrap_or(true);
-                    if will_not_change_base && val.is_one() {
-                        // 1^k equals 1
-                        return Ok(*c);
-                    }
-                }
-                Node::Exp(c, Box::new(new_exp))
-            }
-            // try to do it manually
+            // actually compute the exponent result
             (
                 Node::Num {
                     val: val_a,
@@ -165,6 +143,22 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
                         input_base: input_base_b,
                     }),
                 )
+            }
+            // k^0 equals 1
+            (_, Node::Num { ref val, .. }) if val.is_zero() => common::one(),
+            // (c^d)^b = c^(d*b)
+            (Node::Exp(c, d), b) => {
+                let new_exp = simplify((*d) * b)?;
+                if let Node::Num { val, input_base } = &new_exp {
+                    // We cannot simplify if it changes the display base of the
+                    // result!
+                    let will_not_change_base = input_base.map(|x| x == 10).unwrap_or(true);
+                    if will_not_change_base && val.is_one() {
+                        // 1^k equals 1
+                        return Ok(*c);
+                    }
+                }
+                Node::Exp(c, Box::new(new_exp))
             }
             (Node::Num { val, input_base }, rhs) if is_minus_one(&rhs) => {
                 let (numer, denom) = val.into();
@@ -530,6 +524,11 @@ mod tests {
 
     #[test]
     fn it_errors_with_0_to_power_of_non_positive() {
+        // 2^0
+        let input = Node::Exp(Box::new(common::two()), Box::new(common::zero()));
+        let result = simplify(input);
+        assert!(result.is_ok());
+
         // 0^0
         let input = Node::Exp(Box::new(common::zero()), Box::new(common::zero()));
         let result = simplify(input);
