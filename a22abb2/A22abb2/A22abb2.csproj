@@ -145,9 +145,19 @@
       <SubType>Designer</SubType>
     </AppxManifest>
   </ItemGroup>
+  <Choose>
+    <When Condition="'$(Configuration)' == 'Debug'">
+      <ItemGroup>
+        <Content Include="$(SolutionDir)..\target\$(RustTarget)\debug\a22abb2_ffi.dll" />
+      </ItemGroup>
+    </When>
+    <When Condition="'$(Configuration)' == 'Release'">
+      <ItemGroup>
+        <Content Include="$(SolutionDir)..\target\$(RustTarget)\release\a22abb2_ffi.dll" />
+      </ItemGroup>
+    </When>
+  </Choose>
   <ItemGroup>
-    <Content Condition="'$(Configuration)' == 'Debug'" Include="$(SolutionDir)..\target\$(RustTarget)\debug\a22abb2_ffi.dll" />
-    <Content Condition="'$(Configuration)' == 'Release'" Include="$(SolutionDir)..\target\$(RustTarget)\release\a22abb2_ffi.dll" />
     <Content Include="Assets\BadgeLogo.scale-100.png" />
     <Content Include="Assets\BadgeLogo.scale-125.png" />
     <Content Include="Assets\BadgeLogo.scale-150.png" />

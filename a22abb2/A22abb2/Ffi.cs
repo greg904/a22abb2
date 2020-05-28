@@ -5,19 +5,20 @@ namespace A22abb2
 {
     class Ffi
     {
-        [DllImport("a22abb2_ffi.dll", EntryPoint = "a22abb2_evalresult_free")]
+        [DllImport("a22abb2_ffi.dll", EntryPoint = "a22abb2_evalresult_free", CallingConvention = CallingConvention.Cdecl)]
         private static extern void Native_EvalResult_Free(IntPtr ptr);
 
-        [DllImport("a22abb2_ffi.dll", EntryPoint = "a22abb2_evalresult_has_failed")]
+        [DllImport("a22abb2_ffi.dll", EntryPoint = "a22abb2_evalresult_has_failed", CallingConvention = CallingConvention.Cdecl)]
+        [return:MarshalAs(UnmanagedType.I1)]
         private static extern bool Native_EvalResult_HasFailed(IntPtr ptr);
 
-        [DllImport("a22abb2_ffi.dll", EntryPoint = "a22abb2_evalresult_get_approx")]
+        [DllImport("a22abb2_ffi.dll", EntryPoint = "a22abb2_evalresult_get_approx", CallingConvention = CallingConvention.Cdecl)]
         private static extern double Native_EvalResult_GetApprox(IntPtr ptr);
 
-        [DllImport("a22abb2_ffi.dll", EntryPoint = "a22abb2_evalresult_get_expr_simplified", CharSet = CharSet.Ansi)]
+        [DllImport("a22abb2_ffi.dll", EntryPoint = "a22abb2_evalresult_get_expr_simplified", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         private static extern string Native_EvalResult_GetExprSimplified(IntPtr ptr);
 
-        [DllImport("a22abb2_ffi.dll", EntryPoint = "a22abb2_eval", CharSet = CharSet.Ansi)]
+        [DllImport("a22abb2_ffi.dll", EntryPoint = "a22abb2_eval", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         private static extern IntPtr Native_Eval(string expression);
 
         public struct EvalResult

@@ -15,21 +15,18 @@ pub struct EvalSuccess {
 type EvalResult = Result<EvalSuccess, ()>;
 
 #[no_mangle]
-pub unsafe extern fn a22abb2_evalresult_free(r: *mut EvalResult) {
+pub unsafe extern "C" fn a22abb2_evalresult_free(r: *mut EvalResult) {
     // let the compiler drop the box
     let _ = Box::from_raw(r);
 }
 
 #[no_mangle]
-pub unsafe extern fn a22abb2_evalresult_has_failed(r: *mut EvalResult) -> bool {
-    match &*r {
-        Ok(_) => false,
-        Err(_) => true,
-    }
+pub unsafe extern "C" fn a22abb2_evalresult_has_failed(r: *mut EvalResult) -> bool {
+    (*r).is_err()
 }
 
 #[no_mangle]
-pub unsafe extern fn a22abb2_evalresult_get_approx(r: *mut EvalResult) -> f64 {
+pub unsafe extern "C" fn a22abb2_evalresult_get_approx(r: *mut EvalResult) -> f64 {
     match &*r {
         Ok(success) => success.approx,
         Err(_) => f64::NAN,
@@ -47,7 +44,7 @@ unsafe fn alloc_csharp_str(_byte_count: usize) -> *mut c_char {
 }
 
 #[no_mangle]
-pub unsafe extern fn a22abb2_evalresult_get_expr_simplified(r: *mut EvalResult) -> *mut c_char {
+pub unsafe extern "C" fn a22abb2_evalresult_get_expr_simplified(r: *mut EvalResult) -> *mut c_char {
     match &*r {
         Ok(success) => {
             let char_count = success.expr_simplified.len();
@@ -72,7 +69,7 @@ pub unsafe extern fn a22abb2_evalresult_get_expr_simplified(r: *mut EvalResult) 
 }
 
 #[no_mangle]
-pub unsafe extern fn a22abb2_eval(expr: *const c_char) -> *mut EvalResult {
+pub unsafe extern "C" fn a22abb2_eval(expr: *const c_char) -> *mut EvalResult {
     let expr = CStr::from_ptr(expr);
     let expr = expr.to_str().unwrap();
     
