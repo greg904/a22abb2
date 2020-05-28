@@ -329,10 +329,8 @@ fn get_pi_factor(node: &Node) -> Option<BigRational> {
     }
 }
 
-fn group_and_fold_numbers<I, F>(nodes: I, f: F) -> Vec<Node>
-where
-    I: Iterator<Item = Node>,
-    F: Fn(BigRational, BigRational) -> BigRational,
+fn group_and_fold_numbers<I>(nodes: I, is_sum: bool) -> Vec<Node>
+where I: Iterator<Item = Node>,
 {
     let mut result = Vec::new();
     let mut acc = None;
@@ -341,6 +339,7 @@ where
     for node in nodes {
         match node {
             Node::Num { val, input_base } => {
+                let f = if is_sum { Add::add } else { Mul::mul };
                 acc = Some(match acc {
                     Some(lhs) => f(lhs, val),
                     None => val,
@@ -352,10 +351,13 @@ where
     }
     // put the result number with all of the other nodes
     if let Some(last) = acc {
-        result.push(Node::Num {
-            val: last,
-            input_base: acc_base,
-        });
+        // check if the number is the identity for the operation
+        if (is_sum && !last.is_zero()) || (!is_sum && !last.is_one()) {
+            result.push(Node::Num {
+                val: last,
+                input_base: acc_base,
+            });
+        }
     }
     result
 }
@@ -423,8 +425,7 @@ where
             }
         }
     }
-    let acc_f = if is_sum { Add::add } else { Mul::mul };
-    let children = group_and_fold_numbers(children.into_iter(), acc_f);
+    let children = group_and_fold_numbers(children.into_iter(), is_sum);
 
     // in the case of multiplication, this is children by exponent
     let mut children_by_factors: HashMap<Node, Vec<Node>> = HashMap::new();
@@ -492,7 +493,7 @@ where
             // We always want to use addition here to fold factors:
             // - pi*3 + pi*5 = pi*(3+5)
             // - pi^3 * pi^5 = pi^(3+5)
-            let factors = group_and_fold_numbers(factors.into_iter(), Add::add);
+            let factors = group_and_fold_numbers(factors.into_iter(), true);
 
             // if there is only one factor, return it instead of a list to add
             match factors.len() {
