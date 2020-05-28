@@ -27,7 +27,13 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
             // 1^k equals 1
             (Node::Num { ref val, .. }, _) if val.is_one() => common::one(),
             // k^0 equals 1
-            (_, Node::Num { ref val, .. }) if val.is_zero() => common::one(),
+            (_, Node::Num { ref val, .. }) if val.is_zero() => {
+                if val.is_zero() {
+                    // 0^0 is undefined
+                    return Err(SimplifyError::ZeroToPowerOfNonPositive);
+                }
+                common::one()
+            },
             // (c^d)^b = c^(d*b)
             (Node::Exp(c, d), b) => {
                 let new_exp = simplify((*d) * b)?;
@@ -521,6 +527,19 @@ mod tests {
 
     use super::*;
     use crate::node::EvalError;
+
+    #[test]
+    fn it_errors_with_0_to_power_of_non_positive() {
+        // 0^0
+        let input = Node::Exp(Box::new(common::zero()), Box::new(common::zero()));
+        let result = simplify(input);
+        assert_eq!(result, Err(SimplifyError::ZeroToPowerOfNonPositive));
+
+        // 0^-2
+        let input = Node::Exp(Box::new(common::zero()), Box::new(-common::two()));
+        let result = simplify(input);
+        assert_eq!(result, Err(SimplifyError::ZeroToPowerOfNonPositive));
+    }
 
     #[test]
     fn it_simplifies_roots() {
