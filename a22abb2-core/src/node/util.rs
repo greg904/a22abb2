@@ -10,13 +10,13 @@ pub(crate) fn is_minus_one(node: &Node) -> bool {
     false
 }
 
-pub(crate) fn is_two(node: &Node) -> bool {
+/* pub(crate) fn is_two(node: &Node) -> bool {
     if let Node::Num { val, .. } = node {
         return (val.denom().is_one() && *val.numer() == 2.into())
             || (*val.denom() == (-1).into() && *val.numer() == (-2).into());
     }
     false
-}
+} */
 
 pub(crate) fn get_op_result_base(a_base: Option<u32>, b_base: Option<u32>) -> Option<u32> {
     match (a_base, b_base) {
