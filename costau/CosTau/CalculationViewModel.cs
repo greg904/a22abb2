@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 using Windows.ApplicationModel.Resources;
 using Windows.UI.Xaml;
 
-namespace A22abb2
+namespace CosTau
 {
     public sealed class CalculationViewModel : INotifyPropertyChanged
     {

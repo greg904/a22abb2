@@ -7,8 +7,8 @@
     <ProjectGuid>{51A585F2-7481-40DF-82A9-F208CE038703}</ProjectGuid>
     <OutputType>AppContainerExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>A22abb2</RootNamespace>
-    <AssemblyName>A22abb2</AssemblyName>
+    <RootNamespace>CosTau</RootNamespace>
+    <AssemblyName>CosTau</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
     <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.18362.0</TargetPlatformVersion>
@@ -127,7 +127,7 @@
     <Import Project="PropertySheet.props" />
   </ImportGroup>
   <PropertyGroup>
-    <PreBuildEvent>cd $(SolutionDir)..\a22abb2-ffi &amp;&amp; xargo build --target=$(RustTarget) $(CargoParams)</PreBuildEvent>
+    <PreBuildEvent>cd $(SolutionDir)..\costau-ffi &amp;&amp; xargo build --target=$(RustTarget) $(CargoParams)</PreBuildEvent>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Ffi.cs" />
@@ -148,12 +148,12 @@
   <Choose>
     <When Condition="'$(Configuration)' == 'Debug'">
       <ItemGroup>
-        <Content Include="$(SolutionDir)..\target\$(RustTarget)\debug\a22abb2_ffi.dll" />
+        <Content Include="$(SolutionDir)..\target\$(RustTarget)\debug\costau_ffi.dll" />
       </ItemGroup>
     </When>
     <When Condition="'$(Configuration)' == 'Release'">
       <ItemGroup>
-        <Content Include="$(SolutionDir)..\target\$(RustTarget)\release\a22abb2_ffi.dll" />
+        <Content Include="$(SolutionDir)..\target\$(RustTarget)\release\costau_ffi.dll" />
       </ItemGroup>
     </When>
   </Choose>

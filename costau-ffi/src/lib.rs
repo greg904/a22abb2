@@ -1,5 +1,5 @@
-use a22abb2_core::lexer::{Lexer, Token};
-use a22abb2_core::parser::Parser;
+use costau_core::lexer::{Lexer, Token};
+use costau_core::parser::Parser;
 use std::ffi::CStr;
 use std::mem;
 use std::os::raw::c_char;
@@ -14,13 +14,13 @@ pub struct EvalSuccess {
 type EvalResult = Result<EvalSuccess, ()>;
 
 #[no_mangle]
-pub unsafe extern "C" fn a22abb2_evalresult_free(r: *mut EvalResult) {
+pub unsafe extern "C" fn costau_evalresult_free(r: *mut EvalResult) {
     // let the compiler drop the box
     let _ = Box::from_raw(r);
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn a22abb2_evalresult_has_failed(r: *mut EvalResult) -> bool {
+pub unsafe extern "C" fn costau_evalresult_has_failed(r: *mut EvalResult) -> bool {
     (*r).is_err()
 }
 
@@ -48,7 +48,7 @@ unsafe fn alloc_csharp_str(s: &str) -> *mut c_char {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn a22abb2_evalresult_get_approx(r: *mut EvalResult) -> *mut c_char {
+pub unsafe extern "C" fn costau_evalresult_get_approx(r: *mut EvalResult) -> *mut c_char {
     match &*r {
         Ok(EvalSuccess { approx: Some(s), .. }) => alloc_csharp_str(&s),
         _ => ptr::null_mut(),
@@ -56,7 +56,7 @@ pub unsafe extern "C" fn a22abb2_evalresult_get_approx(r: *mut EvalResult) -> *m
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn a22abb2_evalresult_get_simplified_expr(r: *mut EvalResult) -> *mut c_char {
+pub unsafe extern "C" fn costau_evalresult_get_simplified_expr(r: *mut EvalResult) -> *mut c_char {
     match &*r {
         Ok(success) => alloc_csharp_str(&success.simplified_expr),
         Err(_) => ptr::null_mut(),
@@ -64,7 +64,7 @@ pub unsafe extern "C" fn a22abb2_evalresult_get_simplified_expr(r: *mut EvalResu
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn a22abb2_eval(expr: *const c_char) -> *mut EvalResult {
+pub unsafe extern "C" fn costau_eval(expr: *const c_char) -> *mut EvalResult {
     let expr = CStr::from_ptr(expr);
     let expr = expr.to_str().unwrap();
 

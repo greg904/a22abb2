@@ -1,2 +1,2 @@
 [workspace]
-members = ["a22abb2-core", "a22abb2-ffi"]
+members = ["costau-core", "costau-ffi"]

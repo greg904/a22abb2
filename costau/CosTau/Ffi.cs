@@ -1,24 +1,24 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace A22abb2
+namespace CosTau
 {
     class Ffi
     {
-        [DllImport("a22abb2_ffi.dll", EntryPoint = "a22abb2_evalresult_free", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("costau_ffi.dll", EntryPoint = "costau_evalresult_free", CallingConvention = CallingConvention.Cdecl)]
         private static extern void Native_EvalResult_Free(IntPtr ptr);
 
-        [DllImport("a22abb2_ffi.dll", EntryPoint = "a22abb2_evalresult_has_failed", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("costau_ffi.dll", EntryPoint = "costau_evalresult_has_failed", CallingConvention = CallingConvention.Cdecl)]
         [return:MarshalAs(UnmanagedType.I1)]
         private static extern bool Native_EvalResult_HasFailed(IntPtr ptr);
 
-        [DllImport("a22abb2_ffi.dll", EntryPoint = "a22abb2_evalresult_get_approx", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("costau_ffi.dll", EntryPoint = "costau_evalresult_get_approx", CallingConvention = CallingConvention.Cdecl)]
         private static extern string Native_EvalResult_GetApprox(IntPtr ptr);
 
-        [DllImport("a22abb2_ffi.dll", EntryPoint = "a22abb2_evalresult_get_simplified_expr", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        [DllImport("costau_ffi.dll", EntryPoint = "costau_evalresult_get_simplified_expr", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         private static extern string Native_EvalResult_GetSimplifiedExpr(IntPtr ptr);
 
-        [DllImport("a22abb2_ffi.dll", EntryPoint = "a22abb2_eval", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        [DllImport("costau_ffi.dll", EntryPoint = "costau_eval", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         private static extern IntPtr Native_Eval(string expression);
 
         public struct EvalResult

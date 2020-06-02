@@ -1,9 +1,9 @@
-extern crate a22abb2_core;
+extern crate costau_core;
 extern crate num_rational;
 extern crate num_traits;
 extern crate rand;
 
-use a22abb2_core::node::*;
+use costau_core::node::*;
 use num_rational::BigRational;
 use num_traits::{One, Zero};
 use rand::prelude::*;

@@ -1,9 +1,9 @@
-extern crate a22abb2_core;
+extern crate costau_core;
 
 use std::env;
 
-use a22abb2_core::lexer::Lexer;
-use a22abb2_core::parser::Parser;
+use costau_core::lexer::Lexer;
+use costau_core::parser::Parser;
 
 fn main() {
     let expr = env::args().skip(1).collect::<Vec<_>>().join(" ");

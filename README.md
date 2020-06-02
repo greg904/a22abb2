@@ -1,8 +1,8 @@
 <h1 align="center">
-    <!-- https://raw.githubusercontent.com/greg904/a22abb2/master/images/logo.svg -->
-    <img src="images/logo.svg" alt="A22abb2's logo" width="200">
+    <!-- https://raw.githubusercontent.com/greg904/costau/master/images/logo.svg -->
+    <img src="images/logo.svg" alt="CosTau's logo" width="200">
     <br>
-    A22abb2
+    CosTau
     <br>
 </h1>
 
@@ -10,15 +10,15 @@
 when possible</h4>
 
 <p align="center">
-    <a href="https://travis-ci.org/greg904/a22abb2">
-        <img src="https://travis-ci.org/greg904/a22abb2.svg?branch=master" alt="Build status">
+    <a href="https://travis-ci.org/greg904/costau">
+        <img src="https://travis-ci.org/greg904/costau.svg?branch=master" alt="Build status">
     </a>
     <a href="https://opensource.org/licenses/MIT">
         <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license">
     </a>
 </p>
 
-![A screenshot of A22abb2](/images/screenshot_en-US.png?raw=true)
+![A screenshot of CosTau](/images/screenshot_en-US.png?raw=true)
 
 ## How to build
 
@@ -45,5 +45,5 @@ cargo install xargo
 ```
 
 Now, make sure that Visual Studio with UWP development support is installed and
-open the `a22abb2/A22abb2.sln` solution file with Visual Studio. From there you should
+open the `costau/CosTau.sln` solution file with Visual Studio. From there you should
 be able to build and run the application.

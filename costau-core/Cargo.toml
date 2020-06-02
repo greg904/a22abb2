@@ -1,5 +1,5 @@
 [package]
-name = "a22abb2-core"
+name = "costau-core"
 version = "0.4.0"
 authors = ["Greg Depoire--Ferrer <greg.depoire@gmail.com>"]
 description = "A calculator library"

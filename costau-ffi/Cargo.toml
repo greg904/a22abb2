@@ -1,5 +1,5 @@
 [package]
-name = "a22abb2-ffi"
+name = "costau-ffi"
 version = "0.1.0"
 authors = ["Greg Depoire--Ferrer <greg.depoire@gmail.com>"]
 edition = "2018"
@@ -9,7 +9,7 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-a22abb2-core = { path = "../a22abb2-core" }
+costau-core = { path = "../costau-core" }
 
 [target.'cfg(windows)'.dependencies.winapi]
 # The latest released version (0.3.8) does not build successfully for ARM64,
