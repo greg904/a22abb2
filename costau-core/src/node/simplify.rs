@@ -176,7 +176,7 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
                 // TODO: this works but it breaks `sqrt((a+b)^2)`, solve it
                 if let Node::Num { val: rhs_val, .. } = &rhs {
                     if let Some(rhs_i32) = ratio_to_i32(&rhs_val) {
-                        if rhs_i32 >= 2 && rhs_i32 <= 8 {
+                        if rhs_i32 >= 2 && rhs_i32 <= 3 {
                             // ungroup
                             let factors = iter::repeat(lhs)
                                 .take(rhs_i32.try_into().unwrap())
