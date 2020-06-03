@@ -88,7 +88,7 @@
                     </Paragraph>
                     <Paragraph>
                         <Run x:Uid="ExplanationPart16"/>
-                        <Italic>3e + sin(4pi + 1/2pi)</Italic>
+                        <Italic>3e + sin(4pi + pi/2)</Italic>
                         <Run x:Uid="ExplanationPart17"/>
                     </Paragraph>
                 </RichTextBlock>

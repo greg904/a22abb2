@@ -16,6 +16,7 @@ enum Power {
     Add,
     Mul,
     Exp,
+    ImplicitMul,
 }
 
 /// A parser converts a list of tokens into an AST (abstract syntax tree).
@@ -156,7 +157,7 @@ impl<'a> Parser<'a> {
                             TokenKind::Hat => Some(Power::Exp),
 
                             // implicit multiplication
-                            _ => Some(Power::Mul),
+                            _ => Some(Power::ImplicitMul),
                         };
 
                         if let Some(ref power) = maybe_power {
@@ -213,6 +214,29 @@ mod tests {
                 }
                 .sqrt()
             ))))
+        );
+    }
+
+    #[test]
+    fn it_follows_the_convention_of_higher_precedence_for_implicit_multiplication() {
+        // The precendence of implicit multiplication is not clearly defined but
+        // I believe that when the user enters `1/2pi`, they mean `1/(2pi)`
+        // instead of `pi/2`.
+        let tokens: Vec<Token> = Lexer::new("1/2pi").map(|x| x.unwrap()).collect();
+        let parser = Parser::new(&tokens);
+        let root_node = parser.parse().unwrap();
+
+        let one = Node::Num {
+            val: One::one(),
+            input_base: Some(10)
+        };
+        let two = Node::Num {
+            val: BigRational::from_integer(2.into()),
+            input_base: Some(10)
+        };
+        assert_eq!(
+            root_node,
+            one / (two * Node::Const(ConstKind::Pi))
         );
     }
 }
