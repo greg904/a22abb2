@@ -223,9 +223,9 @@ fn expand_product<'a>(factors: &'a [Node]) -> Box<dyn Iterator<Item = Node> + 'a
         [] => Box::new(iter::empty()),
         [Node::Sum(terms)] => Box::new(terms.iter().cloned()),
         [Node::Sum(head_terms), tail @ ..] => {
-            let tail_terms = expand_product(&tail);
-            Box::new(tail_terms.into_iter()
-                .cartesian_product(head_terms.iter().cloned())
+            let tail_terms: Vec<_> = expand_product(&tail).collect();
+            Box::new(head_terms.iter().cloned()
+                .cartesian_product(tail_terms)
                 .map(|(a, b)| a * b))
         }
         _ => Box::new(iter::once(Node::Product(factors.to_vec()))),
@@ -283,7 +283,7 @@ where
                             let mut iter = sub_children.into_iter();
                             let a = iter.next().unwrap();
                             let b = iter.next().unwrap();
-                            if node_factor_heuristic(&a) > node_factor_heuristic(&b) {
+                            if node_factor_heuristic(&a) >= node_factor_heuristic(&b) {
                                 (a, b)
                             } else {
                                 (b, a)
