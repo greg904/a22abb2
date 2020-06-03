@@ -18,6 +18,8 @@ fn main() {
     let simplified = root_node.simplify().unwrap();
     println!("Simplified expression: {}", simplified);
 
-    let eval = simplified.eval().unwrap();
-    println!("Expression result: {}", eval);
+    match simplified.eval() {
+        Ok(eval) => println!("Expression result: {}", eval),
+        Err(_) => println!("Expression result: (error)"),
+    }
 }
