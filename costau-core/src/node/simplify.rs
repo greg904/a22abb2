@@ -7,7 +7,7 @@ use std::convert::{TryFrom, TryInto};
 use std::iter;
 use std::ops::{Add, Mul};
 
-use super::util::{common, get_op_result_base, is_minus_one, ratio_to_i32};
+use super::util::{common, get_op_result_base, ratio_to_i32};
 use super::{ConstKind, Node};
 
 /// A description of an error that happened while trying to simplify a node.
@@ -24,172 +24,7 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
         Node::Const(ConstKind::Tau) => Node::Const(ConstKind::Pi) * common::two(),
         Node::Sum(children) => simplify_vararg_op(children, true)?,
         Node::Product(children) => simplify_vararg_op(children, false)?,
-        Node::Exp(a, b) => match (simplify(*a)?, simplify(*b)?) {
-            // 1^x = 1
-            (Node::Num { val, .. }, _) if val.is_one() => common::one(),
-            // x^1 = x
-            (lhs, Node::Num { val, .. }) if val.is_one() => lhs,
-            // (a/b)^-1 = b/a
-            (Node::Num { val, input_base }, rhs) if is_minus_one(&rhs) => {
-                let (numer, denom) = val.into();
-                Node::Num {
-                    val: BigRational::new(denom, numer),
-                    input_base,
-                }
-            }
-            // our constants are never zero, so we won't have 0^0
-            (Node::Const(_), Node::Num { val, .. }) if val.is_zero() => common::one(),
-            // actually compute the exponent result
-            (
-                Node::Num {
-                    val: val_a,
-                    input_base: input_base_a,
-                },
-                Node::Num {
-                    val: val_b,
-                    input_base: input_base_b,
-                },
-            ) => {
-                if val_a.is_zero() {
-                    if val_b.is_positive() {
-                        // 0^x = 0 when x > 0
-                        return Ok(common::zero());
-                    } else {
-                        // 0^(-1) is undefined
-                        return Err(SimplifyError::ZeroToPowerOfNonPositive);
-                    }
-                }
-                // x^0 = 1
-                if val_b.is_zero() {
-                    return Ok(common::one());
-                }
-                fn is_pow_safe(lhs_bits: usize, expon: i32) -> bool {
-                    // heuristic to prevent extremely big numbers
-                    u32::try_from(lhs_bits)
-                        .ok()
-                        .and_then(|x| 2048i32.checked_shr(x))
-                        .map(|x| expon.abs() <= x)
-                        .unwrap_or(false)
-                }
-                if let Some(int_expon) = ratio_to_i32(&val_b) {
-                    // Maybe I don't know how to use the API but I couldn't
-                    // manage to use the `.pow` method on `BigRational`.
-                    fn my_pow(a: &BigRational, expon: i32) -> BigRational {
-                        // this is handled in another match arm
-                        assert_ne!(expon, 0);
-                        if expon > 0 {
-                            BigRational::new(
-                                a.numer().pow(expon as u32),
-                                a.denom().pow(expon as u32),
-                            )
-                        } else {
-                            let pos_expon = expon.abs();
-                            BigRational::new(
-                                a.denom().pow(pos_expon as u32),
-                                a.numer().pow(pos_expon as u32),
-                            )
-                        }
-                    }
-                    let lhs_bits = val_a.denom().bits() + val_a.numer().bits();
-                    if is_pow_safe(lhs_bits, int_expon) {
-                        return Ok(Node::Num {
-                            val: my_pow(&val_a, int_expon),
-                            input_base: get_op_result_base(input_base_a, input_base_b),
-                        });
-                    }
-                } else {
-                    let lhs = if val_a.denom().is_one() {
-                        Some(val_a.numer().clone())
-                    } else if *val_a.denom() == (-1).into() {
-                        Some(-val_a.numer())
-                    } else {
-                        None
-                    };
-                    let rhs_inv = if val_b.numer().is_one() {
-                        Some(val_b.denom().clone())
-                    } else if *val_b.numer() == (-1).into() {
-                        Some(-val_b.denom())
-                    } else {
-                        None
-                    };
-                    if let Some(lhs) = lhs {
-                        if let Some(rhs_inv) = rhs_inv.as_ref().and_then(ToPrimitive::to_i32) {
-                            // To compute x^(-1/n), we will compute x^(1/n) and
-                            // take the inverse of it.
-                            let root = rhs_inv.abs();
-                            let root_u32 = root.try_into().unwrap();
-
-                            if root_u32 % 2 == 0 && lhs.is_negative() {
-                                return Err(SimplifyError::ComplexRoot);
-                            }
-
-                            // Check if doing and undoing the root changes
-                            // the output. If it's the case, then it's
-                            // because we're limited by precision and we
-                            // won't simplify.
-                            let result = lhs.nth_root(root_u32);
-                            if is_pow_safe(result.bits(), root) {
-                                let result_undo = result.pow(root_u32);
-                                if result_undo == lhs {
-                                    // see comment above about x^(-1/n)
-                                    let result = if rhs_inv.is_negative() {
-                                        BigRational::new(One::one(), result.into())
-                                    } else {
-                                        BigRational::from_integer(result.into())
-                                    };
-                                    return Ok(Node::Num {
-                                        val: result,
-                                        input_base: get_op_result_base(input_base_a, input_base_b),
-                                    });
-                                }
-                            }
-                        }
-                    }
-                }
-                // cannot simplify, so repack the numbers
-                Node::Exp(
-                    Box::new(Node::Num {
-                        val: val_a,
-                        input_base: input_base_a,
-                    }),
-                    Box::new(Node::Num {
-                        val: val_b,
-                        input_base: input_base_b,
-                    }),
-                )
-            }
-            // (c^d)^b = c^(d*b)
-            (Node::Exp(c, d), b) => {
-                let new_exp = simplify((*d) * b)?;
-                if let Node::Num { val, input_base } = &new_exp {
-                    // We cannot simplify if it changes the display base of the
-                    // result!
-                    let will_not_change_base = input_base.map(|x| x == 10).unwrap_or(true);
-                    if will_not_change_base && val.is_one() {
-                        // 1^k equals 1
-                        return Ok(*c);
-                    }
-                }
-                Node::Exp(c, Box::new(new_exp))
-            }
-            (lhs, rhs) => {
-                // TODO: this works but it breaks `sqrt((a+b)^2)`, solve it
-                if let Node::Num { val: rhs_val, .. } = &rhs {
-                    if let Some(rhs_i32) = ratio_to_i32(&rhs_val) {
-                        if rhs_i32 >= 2 && rhs_i32 <= 3 {
-                            // ungroup
-                            let factors = iter::repeat(lhs)
-                                .take(rhs_i32.try_into().unwrap())
-                                .collect();
-                            return simplify(Node::Product(factors));
-                        }
-                    }
-                }
-                // we cannot simplify
-                Node::Exp(Box::new(lhs), Box::new(rhs))
-            },
-        },
-
+        Node::Exp(lhs, rhs) => simplify_exp(*lhs, *rhs)?,
         Node::Sin(ref inner) | Node::Cos(ref inner) | Node::Tan(ref inner) => {
             let inner_simplified = simplify(*inner.clone())?;
             if let Some(mut pi_factor) = get_pi_factor(&inner_simplified) {
@@ -572,6 +407,173 @@ fn node_factor_heuristic(node: &Node) -> u32 {
         Node::Exp(_, _) => 1,
         _ => 0,
     }
+}
+
+fn simplify_exp(lhs: Node, rhs: Node) -> Result<Node, SimplifyError> {
+    let rhs = simplify(rhs)?;
+
+    // This must be done before we expand the exponent below by
+    // simplifying the LHS.
+    if let Node::Exp(lhs_base, lhs_exp) = lhs {
+        let new_base = simplify(*lhs_base)?;
+        let new_exp = simplify((*lhs_exp) * rhs)?;
+        // (a^b)^c = a^(b*c)
+        return simplify_exp(new_base, new_exp);
+    }
+
+    let lhs = simplify(lhs)?;
+
+    if let Node::Num { val: lhs_val, input_base: lhs_input_base } = &lhs {
+        if let Node::Num { val: rhs_val, input_base: rhs_input_base } = &rhs {
+            // actually try compute the exponent's result
+            match simplify_exp_nums(lhs_val, rhs_val, *lhs_input_base, *rhs_input_base) {
+                Some(x) => return x,
+                None => {},
+            }
+        }
+        if lhs_val.is_one() {
+            // 1^x = 1
+            return Ok(common::one());
+        }
+    } else if let Node::Num { val: rhs_val, .. } = &rhs {
+        if rhs_val.is_one() {
+            // x^1 = x
+            return Ok(lhs);
+        } else if ratio_to_i32(&rhs_val) == Some(-1) {
+            // (a/b)^-1 = b/a
+            if let Node::Num { val: lhs_val, input_base: lhs_input_base } = &lhs {
+                return Ok(Node::Num {
+                    val: BigRational::new(
+                        lhs_val.denom().clone(),
+                        lhs_val.numer().clone(),
+                    ),
+                    input_base: *lhs_input_base,
+                });
+            }
+        } else if rhs_val.is_zero() {
+            if let Node::Const(_) = &lhs {
+                // our constants are never zero, so we won't have 0^0
+                return Ok(common::one());
+            }
+        }
+    }
+
+    if let Node::Num { val: rhs_val, .. } = &rhs {
+        if let Some(rhs_i32) = ratio_to_i32(&rhs_val) {
+            if rhs_i32 >= 2 && rhs_i32 <= 3 {
+                // ungroup
+                let factors = iter::repeat(lhs)
+                    .take(rhs_i32.try_into().unwrap())
+                    .collect();
+                return simplify(Node::Product(factors));
+            }
+        }
+    }
+
+    // failed to simplify
+    Ok(Node::Exp(Box::new(lhs), Box::new(rhs)))
+}
+
+fn simplify_exp_nums(lhs: &BigRational, rhs: &BigRational, lhs_base: Option<u32>, rhs_base: Option<u32>) -> Option<Result<Node, SimplifyError>> {
+    if lhs.is_zero() {
+        if rhs.is_positive() {
+            // 0^x = 0 when x > 0
+            return Some(Ok(common::zero()));
+        } else {
+            // 0^(-1) is undefined
+            return Some(Err(SimplifyError::ZeroToPowerOfNonPositive));
+        }
+    }
+    // x^0 = 1
+    if rhs.is_zero() {
+        return Some(Ok(common::one()));
+    }
+    fn is_pow_safe(lhs_bits: usize, expon: i32) -> bool {
+        // heuristic to prevent extremely big numbers
+        u32::try_from(lhs_bits)
+            .ok()
+            .and_then(|x| 2048i32.checked_shr(x))
+            .map(|x| expon.abs() <= x)
+            .unwrap_or(false)
+    }
+    if let Some(int_expon) = ratio_to_i32(&rhs) {
+        // Maybe I don't know how to use the API but I couldn't
+        // manage to use the `.pow` method on `BigRational`.
+        fn my_pow(a: &BigRational, expon: i32) -> BigRational {
+            // this is handled in another match arm
+            assert_ne!(expon, 0);
+            if expon > 0 {
+                BigRational::new(
+                    a.numer().pow(expon as u32),
+                    a.denom().pow(expon as u32),
+                )
+            } else {
+                let pos_expon = expon.abs();
+                BigRational::new(
+                    a.denom().pow(pos_expon as u32),
+                    a.numer().pow(pos_expon as u32),
+                )
+            }
+        }
+        let lhs_bits = lhs.denom().bits() + lhs.numer().bits();
+        if is_pow_safe(lhs_bits, int_expon) {
+            return Some(Ok(Node::Num {
+                val: my_pow(&lhs, int_expon),
+                input_base: get_op_result_base(lhs_base, rhs_base),
+            }));
+        }
+    } else {
+        let lhs = if lhs.denom().is_one() {
+            Some(lhs.numer().clone())
+        } else if *lhs.denom() == (-1).into() {
+            Some(-lhs.numer())
+        } else {
+            None
+        };
+        let rhs_inv = if rhs.numer().is_one() {
+            Some(rhs.denom().clone())
+        } else if *rhs.numer() == (-1).into() {
+            Some(-rhs.denom())
+        } else {
+            None
+        };
+        if let Some(lhs) = lhs {
+            if let Some(rhs_inv) = rhs_inv.as_ref().and_then(ToPrimitive::to_i32) {
+                // To compute x^(-1/n), we will compute x^(1/n) and
+                // take the inverse of it.
+                let root = rhs_inv.abs();
+                let root_u32 = root.try_into().unwrap();
+
+                if root_u32 % 2 == 0 && lhs.is_negative() {
+                    return Some(Err(SimplifyError::ComplexRoot));
+                }
+
+                // Check if doing and undoing the root changes
+                // the output. If it's the case, then it's
+                // because we're limited by precision and we
+                // won't simplify.
+                let result = lhs.nth_root(root_u32);
+                if is_pow_safe(result.bits(), root) {
+                    let result_undo = result.pow(root_u32);
+                    if result_undo == lhs {
+                        // see comment above about x^(-1/n)
+                        let result = if rhs_inv.is_negative() {
+                            BigRational::new(One::one(), result.into())
+                        } else {
+                            BigRational::from_integer(result.into())
+                        };
+                        return Some(Ok(Node::Num {
+                            val: result,
+                            input_base: get_op_result_base(lhs_base, rhs_base),
+                        }));
+                    }
+                }
+            }
+        }
+    }
+
+    // failed to simplify
+    None
 }
 
 #[cfg(test)]
