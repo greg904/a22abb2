@@ -55,6 +55,10 @@ impl Node {
         Node::Exp(Box::new(self), Box::new(common::minus_one()))
     }
 
+    pub fn sqr(self) -> Node {
+        Node::Exp(Box::new(self), Box::new(common::two()))
+    }
+
     pub fn sqrt(self) -> Node {
         Node::Exp(Box::new(self), Box::new(common::two().inverse()))
     }

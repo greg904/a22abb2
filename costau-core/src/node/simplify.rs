@@ -6,7 +6,7 @@ use std::convert::{TryFrom, TryInto};
 use std::iter;
 use std::ops::{Add, Mul};
 
-use super::util::{common, get_op_result_base, is_minus_one};
+use super::util::{common, get_op_result_base, is_minus_one, ratio_to_i32};
 use super::{ConstKind, Node};
 
 /// A description of an error that happened while trying to simplify a node.
@@ -61,15 +61,6 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
                 // x^0 = 1
                 if val_b.is_zero() {
                     return Ok(common::one());
-                }
-                fn ratio_to_i32(ratio: &BigRational) -> Option<i32> {
-                    if ratio.denom().is_one() {
-                        ratio.numer().to_i32()
-                    } else if *ratio.denom() == (-1).into() {
-                        ratio.numer().to_i32().and_then(|x| x.checked_neg())
-                    } else {
-                        None
-                    }
                 }
                 fn is_pow_safe(lhs_bits: usize, expon: i32) -> bool {
                     // heuristic to prevent extremely big numbers
@@ -182,18 +173,17 @@ pub fn simplify(node: Node) -> Result<Node, SimplifyError> {
             }
             (lhs, rhs) => {
                 // TODO: this works but it breaks `sqrt((a+b)^2)`, solve it
-                /* if is_two(&rhs) {
-                    if let Node::Sum(children) = &lhs {
-                        if children.len() == 2 {
-                            // (a+b)^2 = a^2 + 2ab + b^2
-                            let a = children[0].clone();
-                            let b = children[1].clone();
-                            return Ok(Node::Exp(Box::new(a.clone()), Box::new(common::two())) +
-                                common::two() * a * b.clone() +
-                                Node::Exp(Box::new(b), Box::new(common::two())));
+                if let Node::Num { val: rhs_val, .. } = &rhs {
+                    if let Some(rhs_i32) = ratio_to_i32(&rhs_val) {
+                        if rhs_i32 >= 2 && rhs_i32 <= 8 {
+                            // ungroup
+                            let factors = iter::repeat(lhs)
+                                .take(rhs_i32.try_into().unwrap())
+                                .collect();
+                            return simplify(Node::Product(factors));
                         }
                     }
-                } */
+                }
                 // we cannot simplify
                 Node::Exp(Box::new(lhs), Box::new(rhs))
             },
@@ -440,7 +430,31 @@ where
             }
         }
     }
+
+    // transform `3*2+pi*2+4+9` into `19+pi*2`
     let children = group_and_fold_numbers(children.into_iter(), is_sum);
+
+    if !is_sum && children.len() == 2 {
+        // expand product
+        let (lhs_is_sum, lhs_terms) = if let Node::Sum(lhs_children) = &children[0] {
+            (true, lhs_children.clone())
+        } else {
+            (false, vec![children[0].clone()])
+        };
+        let (rhs_is_sum, rhs_terms) = if let Node::Sum(rhs_children) = &children[1] {
+            (true, rhs_children.clone())
+        } else {
+            (false, vec![children[1].clone()])
+        };
+        if lhs_is_sum || rhs_is_sum {
+            let new_terms = lhs_terms.into_iter()
+                .flat_map(|l| rhs_terms.iter()
+                    .map(|r| l.clone() * r.clone())
+                    .collect::<Vec<_>>())
+                .collect::<Vec<_>>();
+            return Ok(Node::Sum(new_terms));
+        }
+    }
 
     // in the case of multiplication, this is children by exponent
     let mut children_by_factors: HashMap<Node, Vec<Node>> = HashMap::new();
@@ -624,6 +638,19 @@ mod tests {
                 input_base: Some(8),
             }
         );
+    }
+
+    #[test]
+    fn it_expands_products() {
+        let a = Node::UnknownConst("a".to_string());
+        let b = Node::UnknownConst("b".to_string());
+        // TODO: we can't just compare for equality for now because the terms
+        //  do not have a deterministic order yet
+        let ok = match simplify((a.clone() + b.clone()).sqr()) {
+            Ok(Node::Sum(_)) => true,
+            _ => false,
+        };
+        assert!(ok);
     }
 
     #[test]
