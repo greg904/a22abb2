@@ -1,4 +1,5 @@
 use either::Either;
+use itertools::Itertools;
 use num_rational::BigRational;
 use num_traits::{One, Pow, Signed, ToPrimitive, Zero};
 use std::collections::HashMap;
@@ -405,6 +406,20 @@ where
     result
 }
 
+fn expand_product<'a>(factors: &'a [Node]) -> Box<dyn Iterator<Item = Node> + 'a> {
+    match factors {
+        [] => Box::new(iter::empty()),
+        [Node::Sum(terms)] => Box::new(terms.iter().cloned()),
+        [Node::Sum(head_terms), tail @ ..] => {
+            let tail_terms = expand_product(&tail);
+            Box::new(tail_terms.into_iter()
+                .cartesian_product(head_terms.iter().cloned())
+                .map(|(a, b)| a * b))
+        }
+        _ => Box::new(iter::once(Node::Product(factors.to_vec()))),
+    }
+}
+
 fn simplify_vararg_op<I>(children: I, is_sum: bool) -> Result<Node, SimplifyError>
 where
     I: IntoIterator<Item = Node>,
@@ -434,25 +449,11 @@ where
     // transform `3*2+pi*2+4+9` into `19+pi*2`
     let children = group_and_fold_numbers(children.into_iter(), is_sum);
 
-    if !is_sum && children.len() == 2 {
+    if !is_sum {
         // expand product
-        let (lhs_is_sum, lhs_terms) = if let Node::Sum(lhs_children) = &children[0] {
-            (true, lhs_children.clone())
-        } else {
-            (false, vec![children[0].clone()])
-        };
-        let (rhs_is_sum, rhs_terms) = if let Node::Sum(rhs_children) = &children[1] {
-            (true, rhs_children.clone())
-        } else {
-            (false, vec![children[1].clone()])
-        };
-        if lhs_is_sum || rhs_is_sum {
-            let new_terms = lhs_terms.into_iter()
-                .flat_map(|l| rhs_terms.iter()
-                    .map(|r| l.clone() * r.clone())
-                    .collect::<Vec<_>>())
-                .collect::<Vec<_>>();
-            return Ok(Node::Sum(new_terms));
+        let expanded_terms: Vec<Node> = expand_product(&children).collect();
+        if expanded_terms.len() > 1 {
+            return Ok(Node::Sum(expanded_terms));
         }
     }
 

@@ -18,6 +18,7 @@ version = "0.4.0"
 dependencies = [
  "either",
  "float-cmp",
+ "itertools",
  "num-bigint",
  "num-integer",
  "num-rational",
@@ -58,6 +59,15 @@ dependencies = [
  "cfg-if",
  "libc",
  "wasi",
+]
+
+[[package]]
+name = "itertools"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "284f18f85651fe11e8a991b2adb42cb078325c996ed026d994719efcfca1d54b"
+dependencies = [
+ "either",
 ]
 
 [[package]]
