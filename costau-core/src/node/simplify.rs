@@ -453,7 +453,7 @@ where
         // expand product
         let expanded_terms: Vec<Node> = expand_product(&children).collect();
         if expanded_terms.len() > 1 {
-            return Ok(Node::Sum(expanded_terms));
+            return simplify_vararg_op(expanded_terms.into_iter(), true);
         }
     }
 
