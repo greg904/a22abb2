@@ -1,4 +1,3 @@
-use either::Either;
 use itertools::Itertools;
 use num_rational::BigRational;
 use num_traits::{One, Pow, Signed, ToPrimitive, Zero};
@@ -204,41 +203,19 @@ where I: Iterator<Item = Node>,
 }
 
 /// Turns add(add(1, add(2)), 3) into add(1, 2, 3).
-fn deep_flatten_children<I>(children: I, parent_is_sum: bool) -> Vec<Node>
+fn deep_flatten_children<I>(children: I, parent_is_sum: bool) -> impl Iterator<Item = Node>
 where
     I: IntoIterator<Item = Node>,
 {
-    let mut result = Vec::new();
-
-    let mut remaining: Vec<Node> = children.into_iter().collect();
-    while !remaining.is_empty() {
-        remaining = remaining
-            .into_iter()
-            .flat_map(|child| {
-                // can be flattened if it's the same type as parent
-                let can_be_flattened = match (parent_is_sum, &child) {
-                    (true, Node::Sum(_)) => true,
-                    (false, Node::Product(_)) => true,
-                    _ => false,
-                };
-                if can_be_flattened {
-                    let sub_children = match child {
-                        Node::Sum(val) => val,
-                        Node::Product(val) => val,
-                        _ => unreachable!(),
-                    };
-                    // The child can be flattened, so we will continue
-                    // in the next round.
-                    Either::Left(sub_children.into_iter())
-                } else {
-                    // the child cannot be flattened
-                    result.push(child);
-                    Either::Right(iter::empty())
-                }
-            })
-            .collect::<Vec<_>>();
-    }
-    result
+    children.into_iter()
+        .flat_map(move |child| {
+            match (parent_is_sum, child) {
+                // TODO: stop using Box if there is a better way
+                (true, Node::Sum(sub_children)) => Box::new(deep_flatten_children(sub_children, true)) as Box<dyn Iterator<Item = Node>>,
+                (false, Node::Product(sub_children)) => Box::new(deep_flatten_children(sub_children, false)) as Box<dyn Iterator<Item = Node>>,
+                (_, child) => Box::new(iter::once(child)) as Box<dyn Iterator<Item = Node>>,
+            }
+        })
 }
 
 fn expand_product<'a>(factors: &'a [Node]) -> Box<dyn Iterator<Item = Node> + 'a> {
@@ -292,9 +269,10 @@ where
         }
     }
 
-    // in the case of multiplication, this is children by exponent
-    let mut children_by_factors: HashMap<Node, Vec<Node>> = HashMap::new();
-
+    // In the case of multiplication, this is children by exponent
+    // The second field in the value tuple is used to preserve insertion order.
+    let mut children_by_factors: HashMap<Node, (Vec<Node>, usize)> = HashMap::new();
+    let mut insertion_counter = 0;
     for child in children {
         // TODO: better algorithm
         let (child, factor) = if is_sum {
@@ -348,17 +326,31 @@ where
 
         children_by_factors
             .entry(child)
-            .or_insert_with(Vec::new)
+            .or_insert_with(|| (Vec::new(), insertion_counter)).0
             .push(factor);
+
+        // It doesn't matter if we increment this when we did not actually
+        // insert anything new.
+        // The only thing that matters is that when we insert something new, the
+        // counter is larger than the counter for the previously inserted
+        // element.
+        insertion_counter += 1;
     }
 
-    let children = children_by_factors
+    // Sort by insertion order because the `HashMap` disorganized our nice
+    // terms/factors entered by the user.
+    let mut sorted_entries = children_by_factors
+        .into_iter()
+        .collect::<Vec<_>>();
+    sorted_entries.sort_by_key(|(_, (_, inserted))| *inserted);
+
+    let children = sorted_entries
         .into_iter()
         .filter_map(|(child, factors)| {
             // We always want to use addition here to fold factors:
             // - pi*3 + pi*5 = pi*(3+5)
             // - pi^3 * pi^5 = pi^(3+5)
-            let factors = group_and_fold_numbers(factors.into_iter(), true);
+            let factors = group_and_fold_numbers(factors.0.into_iter(), true);
 
             // if there is only one factor, return it instead of a list to add
             match factors.len() {
@@ -599,6 +591,28 @@ mod tests {
         let input = Node::Exp(Box::new(common::zero()), Box::new(-common::two()));
         let result = simplify(input);
         assert_eq!(result, Err(SimplifyError::ZeroToPowerOfNonPositive));
+    }
+
+    #[test]
+    fn it_preserves_order_when_flattening_addition() {
+        // It can be annoying when you type `a + b + c + d` and it reorganizes
+        // the terms during simplification. We should try to prevent this from
+        // happening.
+        assert_eq!(
+            deep_flatten_children(
+                vec![
+                    Node::Const(ConstKind::Pi),
+                    Node::Const(ConstKind::E) + Node::UnknownConst("hello".to_string()) + Node::Const(ConstKind::Tau),
+                ],
+                true
+            ).collect::<Vec<_>>(),
+            vec![
+                Node::Const(ConstKind::Pi),
+                Node::Const(ConstKind::E),
+                Node::UnknownConst("hello".to_string()),
+                Node::Const(ConstKind::Tau),
+            ],
+        );
     }
 
     #[test]
