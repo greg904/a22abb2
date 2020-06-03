@@ -2,7 +2,9 @@ use itertools::Itertools;
 use num_rational::BigRational;
 use num_traits::{One, Pow, Signed, ToPrimitive, Zero};
 use std::collections::HashMap;
+use std::collections::hash_map::DefaultHasher;
 use std::convert::{TryFrom, TryInto};
+use std::hash::{Hash, Hasher};
 use std::iter;
 use std::ops::{Add, Mul};
 
@@ -390,14 +392,24 @@ fn fold_helper(x: Node, factor: Node, is_sum: bool) -> Node {
     }
 }
 
-fn node_factor_heuristic(node: &Node) -> u32 {
+fn node_factor_heuristic(node: &Node) -> i64 {
     // greater numbers mean "use me as a factor" when factoring
     match node {
-        Node::Sin(_) | Node::Cos(_) | Node::Tan(_) => 4,
-        Node::Sum(_) | Node::Product(_) => 3,
-        Node::Const(_) | Node::UnknownConst(_) => 2,
-        Node::Exp(_, _) => 1,
-        _ => 0,
+        Node::Sin(_) | Node::Cos(_) | Node::Tan(_) => 5 << 32,
+        Node::Sum(_) | Node::Product(_) => 4 << 32,
+        Node::Const(ConstKind::Pi) => (3 << 32) + 0,
+        Node::Const(ConstKind::Tau) => (3 << 32) + 1,
+        Node::Const(ConstKind::E) => (3 << 32) + 2,
+        Node::UnknownConst(s) => {
+            // Make sure that the same constants have the same factor heuristic
+            // so that they are grouped correctly.
+            let mut hasher = DefaultHasher::new();
+            s.hash(&mut hasher);
+            let hash = hasher.finish() as u32;
+            (2i64 << 32) + hash as i64
+        },
+        Node::Exp(_, _) => 1 << 32,
+        _ => 0 << 32,
     }
 }
 
