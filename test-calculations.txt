@@ -1911,7 +1911,6 @@ sin(e * 0b0)
 sin(84 + 35)
 cos(tau + e)
 cos -0b11000
-(-3^-0x2)^pi
 tan(pi + pi)
 sin(e * 0o0)
 sin(-93 + 0)
@@ -3213,7 +3212,6 @@ sin 59 * pi * -34
 (tan 3)^(0o2^0x1)
 cos 20 * sin -100
 (sin pi)^(1^-0o1)
-(-1^-2)^(sin 0b1)
 tan((pi + e) * e)
 0^(1 * pi + e^-2)
 tan(tau * pi) * 0
@@ -3254,7 +3252,6 @@ tan(30 - 0b11001)
 48 + sin -55 + pi
 tau * cos(0 * pi)
 sin(pi * 0o0) + 1
-(-0o2^-2)^(cos 2)
 (cos -3)^(cos pi)
 e * 0b1011111 * e
 tau * 0o76 * 0x1D
@@ -3794,7 +3791,6 @@ tan(0o131 * e) * tau
 pi * cos pi * tan 48
 48 + tan -58 + tan 1
 (tan 0b1)^(tan 0b10)
-(-1^2)^(pi + sin -2)
 (e^0o2 + -2 * pi)^pi
 (e + tan 0)^(sin -2)
 cos((pi - 0x49) * e)
@@ -4182,7 +4178,6 @@ tan(pi + pi) + 0b10 + e
 tan -72 + tan -0b100000
 (cos 0 * sin e)^(sin 3)
 (cos 0)^(-0o2 + cos pi)
-(-3^-0o2)^(sin(e * pi))
 tan 1 * -27 * cos e * 0
 tan(tau + tau) * cos pi
 cos((-41 - 0b1010) * e)
@@ -5016,7 +5011,6 @@ tan 3 + sin -2 + 25 + 0b1001001
 e + tau + 69 + sin 67 + cos tau
 (sin -78 + tau) * -52 * tau * e
 (tan pi)^(tan(e * (0b11 + pi)))
-(-1^-0b10)^(tan((e + pi) * pi))
 84 * e * pi * 32 * tan(e * tau)
 -38 * (sin 0o1)^(sin e) * cos e
 tau + tan 1 + tau + tau + tan 0
@@ -7237,7 +7231,6 @@ pi * sin(-0b1000011 * 0) * (pi * 1 * cos 0b1000001 - 0o67) * cos(28 - 0x54) * si
 e + e + (sin(0 * 0))^(pi^0b1) + pi + 76 + (0o0^e)^(sin e) * e * -81 * sin 0 * tan tau
 0o1 * cos -0o31 * tan e * -71 * (cos(e * 0 + tau) - 14 + cos -10 + sin -74 + pi) * 69
 tan -68 * (pi + cos pi - 12 - 15 + tan 76 + sin(tau * (pi + 82))) * -2110538159 * tau
--7 + e * (-0o2^-2)^(sin -3 + e) + 0 + tan pi + (-2 * tan e + tan pi)^(pi^-1) + sin -83
 tan(38 * -77) * cos((0 + 0xF) * (tau + 0)) * pi * -0x47 * cos 93 + 0b101101 + tau + 31
 -32 + e * 63 * sin(tau * 0x0) * -48 * cos e + tan pi + cos(0o105 * 63) + tan(92 * -15)
 tan 1 * tan e * cos e * tan e * e + cos -33 + sin(pi + 44 * pi) * pi * (cos 0)^(cos e)
@@ -7937,7 +7930,6 @@ e * tan e * e^(sin e + cos pi) * (e * tan e * e^(-3 * 0b10) * 57 - 0o124 + cos t
 sin(e + 0b111010) * e * tan(92 * tau + tau) * tan 0o0 * (sin(1 - 0o143) * (cos 43 + tan tau + 0b1100000 + 0b111110 * 25 * 0o0 * -1404030116 + 1^-0o1 + sin -83) * (sin 1)^-2 * cos pi * tau + tan 51) * tau
 sin pi + sin tau * 0o73 * (tan(15 * 0o122) + sin pi + tau - 48 - 0o15 + 1 * sin 32 * tan -36 * tau * tau * tan e) * 0x2D + (cos e)^1 + 1 * cos 77 * 0x48 * sin pi + sin pi + (0 + pi)^((pi + pi^-0x2) * 0o0)
 tau * -71 * (tan tau + e + (e + pi + tau + e) * tan e * cos -7 * -100 - 0b10100 + tau * sin -34 * -97 * cos tau * e * cos e + (3 + pi + 91 - 86 + e) * 0b0 * e * e * sin e) * pi + sin pi + pi + e + tan -0x4
-cos -24 * (0b1 + (-3^-2)^e * 1 * tau + cos(0x4D * (pi + 52))) * pi * (cos(pi + 69) + (sin(-2 + pi))^(cos -0o1) + 64 * (tau + tan tau + cos tau + pi + e) * cos tau * (pi - 3)^(0b10 * e) * tan(pi + 0b0) * pi)
 (sin e + tan 77 + sin e + 0) * (e + e + tau + 0x3C) * (cos -0o71 + sin -75 + pi^-1 * sin 0o124 * tan tau * 0b11110 + cos(tau * tau) + tau + 43) + cos -33 * cos pi * (sin(e + 1) + sin tau) + e + 10 - 64 + 0xB
 sin -94 - 59 + sin 0 + cos tau + tan 1 + sin tau * (e * pi * (e + tau + tau + e) * (e + 0x3B - 0o102 - 88 + e - 0b1010001001101100001000000110111) * sin -0b100001 + tau + tau - 17 + pi) * 0b101101 * tau * -53
 (pi * sin(-82 * tau) * -36 * tau + sin pi + tan((e + tau) * 68) + tau + tan 0x0 - 0x1A) * 1 * tan 1 * 28 * 1703328766 * (6 + pi + 70 + pi * 46 * 3 * pi * pi * (pi^-1 + tan tau + pi + -34 * tau * e + e) - 0x4F)
@@ -7963,7 +7955,6 @@ cos pi * sin 0 * (1^(sin 3) + tan 0o5 + tau + tau + cos 46 + cos pi) * (81 + e +
 -0b101111 + cos 0o1 + (tan tau + sin pi) * (24 * sin -71 * cos 1 + pi + -0x60 * (pi + pi + tau + e + 0xC + 30) * -66 * sin -99 + pi + 27) * e + 0^(pi^e) * 1488502369 * (sin 97 + 0o1 + sin(pi * pi) + pi + tan pi) * e * tau + 4
 (e^e)^(sin(e + pi)) * 0o45 * cos e * cos tau * e^-2 * (0x10 + -54 * (2 + e)^(-0x2 * pi) * 94 * tan tau * sin e + tau * cos(pi * pi) * -57 * tan tau * (cos tau + 1 * -72 * e * -11 * tau + 67 + sin -85 + tan pi) + tan 0x18 + 14)
 tan(1 * e) * cos -59 * (tau * e * tan e * (0 * pi * tau * -0x64 * 50 * e + 22 + sin 7 + -0x61 * pi * tau * pi * 56 * pi + 1726508182 + e) * (tan e + 11 + 40 + tan tau) + tau + pi) * (sin -0b1000101 + tan(95 * 0x55) + e + tan 74)
-e + pi + (sin 0b11011 + tan e + e * 0b0^3 * -0o144 * -49 * sin 6 * tan 1 + sin 0x0 + cos pi * -0b100001 * (-0b10 + tau + pi + tau + 23) * tan tau * sin -6) * e * e * tan 0o1 * (-2^-2)^(pi^-2) * pi + e * 74 * tan 1 * tau + cos -10
 (pi * tan 1)^-3 * (0^(sin e * (e + e)) + sin e * 81 * -7 * (cos -72 + 0o1 + tan pi - 88 + pi) * e + tau + tau + (sin(e + pi))^(cos(0 * 0)) + pi * sin 45 * 0o0 * cos pi * sin -0o103 * (46 + sin pi)) * tan tau * sin e * sin pi * -99
 (tan 0o0)^e * (tan(pi + e) + sin pi + pi^(0x3 * tan e) + e) * -1604274235 * (tan -35 + (59 + tau * 0o0 * pi + tan 0x3C + 0o100 + -0b1101 * -46 * -56 * 0o106 * pi + tan 0o24) * cos -56 * e^(1 - 0o3) * e + tan(tau - 13)) * -0b101011
 (cos(20 * -88) * e * cos pi * (2009385235 - 50 + tan tau + tan -75 + cos tau) * -39 + 52 + 50 + (tau + pi + sin 52) * (sin -9 + 92) * sin e * 0x42 + 0x0 * cos tau + 0o105 * pi * -4 * 50) * sin(pi * pi) * cos -59 * pi * 0x0 * cos 28
