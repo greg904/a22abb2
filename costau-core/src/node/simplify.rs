@@ -286,9 +286,9 @@ where
                             let a = iter.next().unwrap();
                             let b = iter.next().unwrap();
                             if node_factor_heuristic(&a) >= node_factor_heuristic(&b) {
-                                (a, b)
-                            } else {
                                 (b, a)
+                            } else {
+                                (a, b)
                             }
                         }
 
@@ -386,7 +386,7 @@ where
 
 fn fold_helper(x: Node, factor: Node, is_sum: bool) -> Node {
     if is_sum {
-        x * factor
+        factor * x
     } else {
         Node::Exp(Box::new(x), Box::new(factor))
     }
