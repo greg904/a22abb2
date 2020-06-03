@@ -141,6 +141,7 @@ impl Display for Node {
             }
             Node::Product(children) => {
                 let mut first = true;
+                let mut previous_was_int = false;
                 for child in children {
                     if first {
                         first = false;
@@ -154,9 +155,24 @@ impl Display for Node {
                                 continue;
                             }
                         }
-                        write!(f, " * ")?;
+                        // Use implicit multiplication for integers followed by
+                        // constants.
+                        let mut implicit_mul = false;
+                        if let Node::Const(..) = &child {
+                            if previous_was_int {
+                                implicit_mul = true;
+                            }
+                        }
+                        if !implicit_mul {
+                            write!(f, " * ")?;
+                        }
                     }
                     write_with_paren(f, child, get_node_priority(self), true, false)?;
+                    if let Node::Num { val, .. } = &child {
+                        if val.is_integer() {
+                            previous_was_int = true;
+                        }
+                    }
                 }
                 Ok(())
             }
