@@ -158,8 +158,10 @@ impl Display for Node {
                         // Use implicit multiplication for integers followed by
                         // constants.
                         let mut implicit_mul = false;
-                        if let Node::Const(..) = &child {
-                            if previous_was_int {
+                        if previous_was_int {
+                            if let Node::Const(..) = &child {
+                                implicit_mul = true;
+                            } else if let Node::UnknownConst(..) = &child {
                                 implicit_mul = true;
                             }
                         }
