@@ -164,7 +164,7 @@ impl Display for Node {
                 if is_minus_one(b) {
                     // a^-1 = 1/a
                     write!(f, "1/")?;
-                    write_with_paren(f, a, NodePriority::MulOrDiv, true, false)
+                    write_with_paren(f, a, NodePriority::MulOrDiv, false, false)
                 } else {
                     write_with_paren(f, a, NodePriority::Exp, false, false)?;
                     f.write_char('^')?;
@@ -186,7 +186,7 @@ mod tests {
 
     #[test]
     fn it_formats_a_node_correctly() {
-        const CASES: [&str; 7] = [
+        const CASES: [&str; 8] = [
             // easy
             "1+2",
             "1*3+5",
@@ -195,6 +195,8 @@ mod tests {
             "1/(2/3)",
             "pi/2e",
             "sin cos 2",
+            // implicit multiplication
+            "1/2pi",
             // number base
             "0xFF/0b10*sin(2)",
         ];
@@ -209,7 +211,10 @@ mod tests {
 
             let ground_truth = root_node.eval().unwrap();
             let result_from_formatted = new_root_node.eval().unwrap();
-            assert!((result_from_formatted.val - ground_truth.val).abs() < 0.001);
+            // This should be an exact match because there is no simplification
+            // or modification of the node yet, so the ASTs should be exactly
+            // the same and therefore yield the exact same results.
+            assert_eq!(result_from_formatted.val, ground_truth.val);
             assert_eq!(
                 result_from_formatted.display_base,
                 ground_truth.display_base
