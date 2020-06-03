@@ -357,7 +357,7 @@ where
             // if there is only one factor, return it instead of a list to add
             match factors.len() {
                 0 => None,
-                1 => Some(match factors.into_iter().next().unwrap() {
+                1 => Some(Ok(match factors.into_iter().next().unwrap() {
                     // if the only factor is 1, then return the child directly
                     Node::Num { ref val, .. } if val.is_one() => child,
                     // If the only factor is 0, then discard because 0
@@ -365,11 +365,14 @@ where
                     Node::Num { ref val, .. } if val.is_zero() => return None,
 
                     other => fold_helper(child, other, is_sum),
-                }),
-                _ => Some(fold_helper(child, Node::Sum(factors), is_sum)),
+                })),
+                _ => Some(Ok(match simplify_vararg_op(factors, true) {
+                    Ok(factor) => fold_helper(child, factor, is_sum),
+                    Err(err) => return Some(Err(err)),
+                })),
             }
         })
-        .collect::<Vec<_>>();
+        .collect::<Result<Vec<Node>, _>>()?;
 
     // if there is only one node, return it instead of a list to evaluate
     Ok(match children.len() {
