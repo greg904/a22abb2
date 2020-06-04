@@ -127,26 +127,14 @@ namespace CosTau
                 return;
             }
 
-            var expressionNormalized = ExpressionNormalizeRegex.Replace(this.expression, "");
             var resultParts = new List<string>();
-            // Only show the parts that are useful, which are the parts that
-            // are not the same as the expression that the user typed.
-            string simplificationNormalized = null;
             if (evalResult.SimplifiedExpression != null)
             {
-                simplificationNormalized = ExpressionNormalizeRegex.Replace(evalResult.SimplifiedExpression, "");
-                if (!simplificationNormalized.Equals(expressionNormalized))
-                {
-                    resultParts.Add($"= {evalResult.SimplifiedExpression}");
-                }
+                resultParts.Add($"= {evalResult.SimplifiedExpression}");
             }
             if (evalResult.Approximation != null)
             {
-                var approximationNormalized = ExpressionNormalizeRegex.Replace(evalResult.Approximation, "");
-                if (!approximationNormalized.Equals(expressionNormalized) && !approximationNormalized.Equals(simplificationNormalized))
-                {
-                    resultParts.Add($"≈ {evalResult.Approximation}");
-                }
+                resultParts.Add($"≈ {evalResult.Approximation}");
             }
 
             if (resultParts.Count > 0)

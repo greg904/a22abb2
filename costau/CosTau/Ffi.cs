@@ -25,16 +25,13 @@ namespace CosTau
         {
             public string Approximation;
             public string SimplifiedExpression;
+            public bool HasFailed;
 
-            public bool HasFailed
-            {
-                get => this.Approximation == null && this.SimplifiedExpression == null;
-            }
-
-            public EvalResult(string resultValue, string simplifiedExpression)
+            public EvalResult(string resultValue, string simplifiedExpression, bool hasFailed)
             {
                 this.Approximation = resultValue;
                 this.SimplifiedExpression = simplifiedExpression;
+                this.HasFailed = hasFailed;
             }
         }
 
@@ -43,18 +40,10 @@ namespace CosTau
             var ptr = Native_Eval(expression);
             try
             {
-                if (Native_EvalResult_HasFailed(ptr))
-                {
-                    // error
-                    return new EvalResult();
-                }
-                else
-                {
-                    // success
-                    var approx = Native_EvalResult_GetApprox(ptr);
-                    var simplified = Native_EvalResult_GetSimplifiedExpr(ptr);
-                    return new EvalResult(approx, simplified);
-                }
+                var approx = Native_EvalResult_GetApprox(ptr);
+                var simplified = Native_EvalResult_GetSimplifiedExpr(ptr);
+                var hasFailed = Native_EvalResult_HasFailed(ptr);
+                return new EvalResult(approx, simplified, hasFailed);
             }
             finally
             {

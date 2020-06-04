@@ -1,5 +1,7 @@
 use costau_core::lexer::{Lexer, Token};
 use costau_core::parser::Parser;
+use costau_core::node::Node;
+use num_traits::One;
 use std::ffi::CStr;
 use std::mem;
 use std::os::raw::c_char;
@@ -83,15 +85,29 @@ pub unsafe extern "C" fn costau_eval(expr: *const c_char) -> *mut EvalResult {
         Ok(x) => x,
         Err(_) => return Box::into_raw(Box::new(Err(()))),
     };
+
     let (simplified_expr, did_simplify) = match root_node.simplify() {
         Ok(x) => (x.result, x.did_something),
         Err(_) => return Box::into_raw(Box::new(Err(()))),
     };
-    let approx = simplified_expr.eval().ok()
-        .map(|x| x.val.to_string());
+
+    let needs_approx = if let Node::Num { val, .. } = &simplified_expr {
+        // if integer, already simplified to the maximum
+        !val.denom().is_one() && *val.denom() != (-1).into()
+    } else {
+        true
+    };
+    let approx = if needs_approx {
+        simplified_expr.eval().ok()
+            .map(|x| x.val.to_string())
+    } else {
+        None
+    };
 
     let r = EvalSuccess {
-        simplified_expr: if did_simplify { Some(simplified_expr.to_string()) } else { None },
+        simplified_expr: Some(simplified_expr)
+            .filter(|_| did_simplify)
+            .map(|x| x.to_string()),
         approx,
     };
     Box::into_raw(Box::new(Ok(r)))

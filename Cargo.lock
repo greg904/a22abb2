@@ -32,6 +32,7 @@ name = "costau-ffi"
 version = "0.1.0"
 dependencies = [
  "costau-core",
+ "num-traits",
  "winapi",
 ]
 

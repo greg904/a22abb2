@@ -10,6 +10,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 costau-core = { path = "../costau-core" }
+num-traits = "0.2.11"
 
 [target.'cfg(windows)'.dependencies.winapi]
 # The latest released version (0.3.8) does not build successfully for ARM64,
