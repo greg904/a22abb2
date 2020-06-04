@@ -118,9 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AppDescription" xml:space="preserve">
-    <value>Una aplicación que:
-1. Simplifica las fórmulas/expresiones matemáticas (por ejemplo, "sqrt(pi^2)" se simplifica a "pi").
-2. Presenta una aproximación de los resultados de los cálculos (por ejemplo, muestra algunos dígitos de e cuando escribe "e").</value>
+    <value>Una aplicación que simplifica las fórmulas/expresiones matemáticas y presenta una aproximación de los resultados de los cálculos.</value>
     <comment>The application's description</comment>
   </data>
   <data name="CalculationFailedText" xml:space="preserve">
