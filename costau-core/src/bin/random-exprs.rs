@@ -219,7 +219,7 @@ fn main() {
             // make sure that it can be simplified
             if let Ok(simplified) = node.clone().simplify() {
                 // second round of checking if it can be evaluated
-                if let Ok(simplified_result) = simplified.eval() {
+                if let Ok(simplified_result) = simplified.result.eval() {
                     // BTW, let's check if we simplified correctly
                     let mut is_equal = (simplified_result.val - ground_truth.val).abs() < 0.1;
                     if !is_equal && ground_truth.val != 0.0 {
@@ -228,7 +228,7 @@ fn main() {
                         is_equal = rel_error < 0.1;
                     }
                     if !is_equal {
-                        eprintln!("warning: incorrect simplification for {}: got {} which evaluates to {} instead of {}", node, simplified, simplified_result.val, ground_truth.val);
+                        eprintln!("warning: incorrect simplification for {}: got {} which evaluates to {} instead of {}", node, simplified.result, simplified_result.val, ground_truth.val);
                         return;
                     }
 

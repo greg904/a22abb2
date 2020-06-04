@@ -7,7 +7,7 @@ use std::ptr;
 use std::slice;
 
 pub struct EvalSuccess {
-    simplified_expr: String,
+    simplified_expr: Option<String>,
     approx: Option<String>,
 }
 
@@ -58,8 +58,8 @@ pub unsafe extern "C" fn costau_evalresult_get_approx(r: *mut EvalResult) -> *mu
 #[no_mangle]
 pub unsafe extern "C" fn costau_evalresult_get_simplified_expr(r: *mut EvalResult) -> *mut c_char {
     match &*r {
-        Ok(success) => alloc_csharp_str(&success.simplified_expr),
-        Err(_) => ptr::null_mut(),
+        Ok(EvalSuccess { simplified_expr: Some(s), .. }) => alloc_csharp_str(&s),
+        _ => ptr::null_mut(),
     }
 }
 
@@ -83,15 +83,15 @@ pub unsafe extern "C" fn costau_eval(expr: *const c_char) -> *mut EvalResult {
         Ok(x) => x,
         Err(_) => return Box::into_raw(Box::new(Err(()))),
     };
-    let simplified = match root_node.simplify() {
-        Ok(x) => x,
+    let (simplified_expr, did_simplify) = match root_node.simplify() {
+        Ok(x) => (x.result, x.did_something),
         Err(_) => return Box::into_raw(Box::new(Err(()))),
     };
-    let approx = simplified.eval().ok()
+    let approx = simplified_expr.eval().ok()
         .map(|x| x.val.to_string());
 
     let r = EvalSuccess {
-        simplified_expr: simplified.to_string(),
+        simplified_expr: if did_simplify { Some(simplified_expr.to_string()) } else { None },
         approx,
     };
     Box::into_raw(Box::new(Ok(r)))

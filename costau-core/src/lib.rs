@@ -45,7 +45,7 @@ mod tests {
                     match node.clone().simplify() {
                         Ok(simplified) => {
                             // second round of checking if it can be evaluated
-                            match simplified.eval() {
+                            match simplified.result.eval() {
                                 Ok(simplified_result) => {
                                     // BTW, let's check if we simplified correctly
                                     let mut is_equal = (simplified_result.val - ground_truth.val).abs() < 0.1;
@@ -55,7 +55,7 @@ mod tests {
                                         is_equal = rel_error < 0.1;
                                     }
                                     if !is_equal {
-                                        panic!("got incorrect simplification for {}: got {} which evaluates to {} instead of {}", test, simplified, simplified_result.val, ground_truth.val);
+                                        panic!("got incorrect simplification for {}: got {} which evaluates to {} instead of {}", test, simplified.result, simplified_result.val, ground_truth.val);
                                     }
                                 }
                                 Err(err) => panic!("failed to eval {} after simplify: {:?}", test, err),

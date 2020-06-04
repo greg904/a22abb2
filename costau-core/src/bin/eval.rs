@@ -16,9 +16,11 @@ fn main() {
     let root_node = parser.parse().unwrap();
 
     let simplified = root_node.simplify().unwrap();
-    println!("Simplified expression: {}", simplified);
+    if simplified.did_something {
+        println!("Simplified expression: {}", simplified.result);
+    }
 
-    match simplified.eval() {
+    match simplified.result.eval() {
         Ok(eval) => println!("Expression result: {}", eval),
         Err(_) => println!("Expression result: (error)"),
     }
