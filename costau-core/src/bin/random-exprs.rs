@@ -82,11 +82,11 @@ fn random_vararg_op(ctx: RecursiveCtx, is_sum: bool) -> Node {
         children.push(random_node(ctx.for_vararg_op(is_sum)));
     }
 
-    return if is_sum {
+    if is_sum {
         Node::Sum(children)
     } else {
         Node::Product(children)
-    };
+    }
 }
 
 fn random_node(ctx: RecursiveCtx) -> Node {

@@ -96,7 +96,7 @@ impl<'a> Lexer<'a> {
         }
 
         let token_kind = IdentKind::from_str(&ident)
-            .map(|k| TokenKind::Ident(k))
+            .map(TokenKind::Ident)
             .unwrap_or_else(|_| TokenKind::UnknownIdent(ident));
         Some(Ok(Token {
             kind: token_kind,

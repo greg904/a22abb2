@@ -1,3 +1,6 @@
+// We use `unsafe` for FFI.
+#![allow(clippy::missing_safety_doc)]
+
 use costau_core::lexer::{Lexer, Token};
 use costau_core::node::Node;
 use costau_core::parser::Parser;

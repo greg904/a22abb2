@@ -39,16 +39,16 @@ pub struct SimplifySuccess {
 pub fn simplify(node: Node) -> Result<SimplifySuccess, SimplifyError> {
     match node {
         Node::Const(ConstKind::Tau) => {
-            return Ok(SimplifySuccess {
+            Ok(SimplifySuccess {
                 result: Node::Const(ConstKind::Pi) * common::two(),
                 // We only do this translation for simplification purposes, but
                 // we did not actually do anything smart here.
                 did_something: false,
-            });
+            })
         }
-        Node::Sum(children) => return simplify_vararg_op(children, true),
-        Node::Product(children) => return simplify_vararg_op(children, false),
-        Node::Exp(lhs, rhs) => return simplify_exp(*lhs, *rhs),
+        Node::Sum(children) => simplify_vararg_op(children, true),
+        Node::Product(children) => simplify_vararg_op(children, false),
+        Node::Exp(lhs, rhs) => simplify_exp(*lhs, *rhs),
         Node::Sin(ref inner) | Node::Cos(ref inner) | Node::Tan(ref inner) => {
             let inner_simplified = simplify(*inner.clone())?;
             if let Some(mut pi_factor) = get_pi_factor(&inner_simplified.result) {
@@ -157,7 +157,7 @@ pub fn simplify(node: Node) -> Result<SimplifySuccess, SimplifyError> {
                 }
             }
             // failed to simplify with common angle
-            return Ok(SimplifySuccess {
+            Ok(SimplifySuccess {
                 result: match &node {
                     Node::Sin(_) => Node::Sin(Box::new(inner_simplified.result)),
                     Node::Cos(_) => Node::Cos(Box::new(inner_simplified.result)),
@@ -165,16 +165,14 @@ pub fn simplify(node: Node) -> Result<SimplifySuccess, SimplifyError> {
                     _ => unreachable!(),
                 },
                 did_something: inner_simplified.did_something,
-            });
+            })
         }
 
         // fallback to doing nothing
-        node => {
-            return Ok(SimplifySuccess {
-                result: node,
-                did_something: false,
-            })
-        }
+        node => Ok(SimplifySuccess {
+            result: node,
+            did_something: false,
+        })
     }
 }
 
@@ -484,7 +482,7 @@ fn node_factor_heuristic(node: &Node) -> i64 {
     match node {
         Node::Sin(_) | Node::Cos(_) | Node::Tan(_) => 5 << 32,
         Node::Sum(_) | Node::Product(_) => 4 << 32,
-        Node::Const(ConstKind::Pi) => (3 << 32) + 0,
+        Node::Const(ConstKind::Pi) => 3 << 32,
         Node::Const(ConstKind::Tau) => (3 << 32) + 1,
         Node::Const(ConstKind::E) => (3 << 32) + 2,
         Node::UnknownConst(s) => {
@@ -693,9 +691,9 @@ fn simplify_exp_nums(
                     if result_undo == lhs {
                         // see comment above about x^(-1/n)
                         let result = if rhs_inv.is_negative() {
-                            BigRational::new(One::one(), result.into())
+                            BigRational::new(One::one(), result)
                         } else {
-                            BigRational::from_integer(result.into())
+                            BigRational::from_integer(result)
                         };
                         return Some(Ok(Node::Num {
                             val: result,
