@@ -172,7 +172,7 @@ pub fn simplify(node: Node) -> Result<SimplifySuccess, SimplifyError> {
         node => Ok(SimplifySuccess {
             result: node,
             did_something: false,
-        })
+        }),
     }
 }
 

@@ -1,13 +1,10 @@
-<h1 align="center">
-    <!-- https://raw.githubusercontent.com/greg904/costau/master/images/logo.svg -->
-    <img src="images/logo.svg" alt="CosTau's logo" width="200">
-    <br>
-    CosTau
-    <br>
-</h1>
+<p align="center">
+    <img src="images/logo.svg?raw=true" alt="CosTau's logo" width="100">
+</p>
+<h1 align="center">CosTau</h1>
 
-<h4 align="center">A WIP calculator that tries to give you exact results
-when possible</h4>
+<h4 align="center">A calculator that tries to give you exact results when
+possible</h4>
 
 <p align="center">
     <a href="https://travis-ci.org/greg904/costau">
@@ -18,7 +15,15 @@ when possible</h4>
     </a>
 </p>
 
-![A screenshot of CosTau](/images/screenshot_en-US.png?raw=true)
+<p align="center">
+    <img src="/images/screenshot_en-US.png?raw=true" alt="A screenshot of CosTau" width="300">
+</p>
+
+## Download
+
+<a href='https://www.microsoft.com/store/apps/9PMNZH9N6W0R?cid=storebadge&ocid=badge'>
+    <img src="/images/ms-store-badge.svg?raw=true" alt="Get it from Microsoft Store" height="64">
+</a>
 
 ## How to build
 
