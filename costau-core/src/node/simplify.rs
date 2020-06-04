@@ -352,9 +352,9 @@ where
                             let a = iter.next().unwrap();
                             let b = iter.next().unwrap();
                             if node_factor_heuristic(&a) >= node_factor_heuristic(&b) {
-                                (b, a)
-                            } else {
                                 (a, b)
+                            } else {
+                                (b, a)
                             }
                         }
 
