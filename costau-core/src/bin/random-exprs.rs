@@ -213,7 +213,10 @@ fn main() {
         if let Ok(ground_truth) = node.eval() {
             // will cause precision errors and other weird errors
             if !ground_truth.val.is_finite() {
-                eprintln!("warning: generated node with infinite approximation: {}", node);
+                eprintln!(
+                    "warning: generated node with infinite approximation: {}",
+                    node
+                );
                 return;
             }
             // make sure that it can be simplified

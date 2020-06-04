@@ -266,7 +266,7 @@ impl Display for EvalSuccess {
                 }
                 let mut buf = ryu::Buffer::new();
                 let printed = buf.format(self.val);
-                out.write_str(printed) 
+                out.write_str(printed)
             }
         }
     }

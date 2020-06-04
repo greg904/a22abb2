@@ -2,8 +2,8 @@ extern crate costau_core;
 extern crate num_traits;
 
 use costau_core::lexer::Lexer;
-use costau_core::parser::Parser;
 use costau_core::node::Node;
+use costau_core::parser::Parser;
 use num_traits::One;
 use std::env;
 

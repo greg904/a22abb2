@@ -1,6 +1,6 @@
 extern crate either;
-extern crate itertools;
 extern crate float_cmp;
+extern crate itertools;
 extern crate num_bigint;
 extern crate num_integer;
 extern crate num_rational;
@@ -48,19 +48,24 @@ mod tests {
                             match simplified.result.eval() {
                                 Ok(simplified_result) => {
                                     // BTW, let's check if we simplified correctly
-                                    let mut is_equal = (simplified_result.val - ground_truth.val).abs() < 0.1;
+                                    let mut is_equal =
+                                        (simplified_result.val - ground_truth.val).abs() < 0.1;
                                     if !is_equal && ground_truth.val != 0.0 {
-                                        let rel_error =
-                                            ((simplified_result.val - ground_truth.val) / ground_truth.val).abs();
+                                        let rel_error = ((simplified_result.val
+                                            - ground_truth.val)
+                                            / ground_truth.val)
+                                            .abs();
                                         is_equal = rel_error < 0.1;
                                     }
                                     if !is_equal {
                                         panic!("got incorrect simplification for {}: got {} which evaluates to {} instead of {}", test, simplified.result, simplified_result.val, ground_truth.val);
                                     }
                                 }
-                                Err(err) => panic!("failed to eval {} after simplify: {:?}", test, err),
+                                Err(err) => {
+                                    panic!("failed to eval {} after simplify: {:?}", test, err)
+                                }
                             }
-                        },
+                        }
                         Err(err) => panic!("failed to simplify {}: {:?}", test, err),
                     }
                 }

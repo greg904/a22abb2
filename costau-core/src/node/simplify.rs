@@ -1,8 +1,8 @@
 use itertools::Itertools;
 use num_rational::BigRational;
 use num_traits::{One, Pow, Signed, ToPrimitive, Zero};
-use std::collections::HashMap;
 use std::collections::hash_map::DefaultHasher;
+use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
 use std::hash::{Hash, Hasher};
 use std::iter;
@@ -45,7 +45,7 @@ pub fn simplify(node: Node) -> Result<SimplifySuccess, SimplifyError> {
                 // we did not actually do anything smart here.
                 did_something: false,
             });
-        },
+        }
         Node::Sum(children) => return simplify_vararg_op(children, true),
         Node::Product(children) => return simplify_vararg_op(children, false),
         Node::Exp(lhs, rhs) => return simplify_exp(*lhs, *rhs),
@@ -99,7 +99,7 @@ pub fn simplify(node: Node) -> Result<SimplifySuccess, SimplifyError> {
                     return Ok(SimplifySuccess {
                         result: simplified_node,
                         did_something: true,
-                    })
+                    });
                 } else if *pi_factor.denom() == 3.into() {
                     // pi/2 < x < 3pi/2
                     let is_left = *pi_factor.numer() > 1.into() && *pi_factor.numer() < 5.into();
@@ -116,7 +116,7 @@ pub fn simplify(node: Node) -> Result<SimplifySuccess, SimplifyError> {
                             Node::Tan(_) if is_top == is_left => -common::three().sqrt(),
                             _ => unreachable!(),
                         },
-                        did_something: true
+                        did_something: true,
                     });
                 } else if *pi_factor.denom() == 4.into() {
                     // pi/2 < x < 3pi/2
@@ -134,7 +134,7 @@ pub fn simplify(node: Node) -> Result<SimplifySuccess, SimplifyError> {
                             Node::Tan(_) if is_top == is_left => common::minus_one(),
                             _ => unreachable!(),
                         },
-                        did_something: true
+                        did_something: true,
                     });
                 } else if *pi_factor.denom() == 6.into() {
                     // pi/2 < x < 3pi/2
@@ -152,7 +152,7 @@ pub fn simplify(node: Node) -> Result<SimplifySuccess, SimplifyError> {
                             Node::Tan(_) if is_top == is_left => -common::three().sqrt().inverse(),
                             _ => unreachable!(),
                         },
-                        did_something: true
+                        did_something: true,
                     });
                 }
             }
@@ -169,10 +169,12 @@ pub fn simplify(node: Node) -> Result<SimplifySuccess, SimplifyError> {
         }
 
         // fallback to doing nothing
-        node => return Ok(SimplifySuccess {
-            result: node,
-            did_something: false,
-        }),
+        node => {
+            return Ok(SimplifySuccess {
+                result: node,
+                did_something: false,
+            })
+        }
     }
 }
 
@@ -220,7 +222,8 @@ fn get_pi_factor(node: &Node) -> Option<BigRational> {
 }
 
 fn group_and_fold_numbers<I>(nodes: I, is_sum: bool) -> (Vec<Node>, bool)
-where I: Iterator<Item = Node>,
+where
+    I: Iterator<Item = Node>,
 {
     let mut result = Vec::new();
     let mut acc = None;
@@ -235,7 +238,7 @@ where I: Iterator<Item = Node>,
                     Some(lhs) => {
                         did_something = true;
                         f(lhs, val)
-                    },
+                    }
                     None => val,
                 });
                 acc_base = get_op_result_base(acc_base, input_base);
@@ -247,10 +250,13 @@ where I: Iterator<Item = Node>,
     if let Some(last) = acc {
         // check if the number is the identity for the operation
         if (is_sum && !last.is_zero()) || (!is_sum && !last.is_one()) {
-            result.insert(0, Node::Num {
-                val: last,
-                input_base: acc_base,
-            });
+            result.insert(
+                0,
+                Node::Num {
+                    val: last,
+                    input_base: acc_base,
+                },
+            );
         }
     }
     (result, did_something)
@@ -269,7 +275,7 @@ where
                 let mut tmp = deep_flatten_children(sub_children, parent_is_sum);
                 result.append(&mut tmp.0);
                 did_something |= tmp.1;
-            },
+            }
             (_, child) => result.push(child),
         }
     }
@@ -282,9 +288,13 @@ fn expand_product<'a>(factors: &'a [Node]) -> Box<dyn Iterator<Item = Node> + 'a
         [Node::Sum(terms)] => Box::new(terms.iter().cloned()),
         [Node::Sum(head_terms), tail @ ..] => {
             let tail_terms: Vec<_> = expand_product(&tail).collect();
-            Box::new(head_terms.iter().cloned()
-                .cartesian_product(tail_terms)
-                .map(|(a, b)| a * b))
+            Box::new(
+                head_terms
+                    .iter()
+                    .cloned()
+                    .cartesian_product(tail_terms)
+                    .map(|(a, b)| a * b),
+            )
         }
         _ => Box::new(iter::once(Node::Product(factors.to_vec()))),
     }
@@ -394,7 +404,8 @@ where
 
         children_by_factors
             .entry(child)
-            .or_insert_with(|| (Vec::new(), insertion_counter)).0
+            .or_insert_with(|| (Vec::new(), insertion_counter))
+            .0
             .push(factor);
 
         // It doesn't matter if we increment this when we did not actually
@@ -407,9 +418,7 @@ where
 
     // Sort by insertion order because the `HashMap` disorganized our nice
     // terms/factors entered by the user.
-    let mut sorted_entries = children_by_factors
-        .into_iter()
-        .collect::<Vec<_>>();
+    let mut sorted_entries = children_by_factors.into_iter().collect::<Vec<_>>();
     sorted_entries.sort_by_key(|(_, (_, inserted))| *inserted);
 
     let mut children = Vec::new();
@@ -422,7 +431,7 @@ where
         did_something |= tmp.1;
 
         match factors.len() {
-            0 => {},
+            0 => {}
             1 => {
                 let new_child = match factors.into_iter().next().unwrap() {
                     // if the only factor is 1, then return the child directly
@@ -433,7 +442,7 @@ where
                     other => fold_helper(child, other, is_sum),
                 };
                 children.push(new_child);
-            },
+            }
             _ => {
                 let tmp = simplify_vararg_op(factors, true)?;
                 let factor = tmp.result;
@@ -441,7 +450,7 @@ where
 
                 let new_child = fold_helper(child, factor, is_sum);
                 children.push(new_child);
-            },
+            }
         }
     }
 
@@ -458,7 +467,7 @@ where
     };
     Ok(SimplifySuccess {
         result,
-        did_something
+        did_something,
     })
 }
 
@@ -485,7 +494,7 @@ fn node_factor_heuristic(node: &Node) -> i64 {
             s.hash(&mut hasher);
             let hash = hasher.finish() as u32;
             (2i64 << 32) + hash as i64
-        },
+        }
         Node::Exp(_, _) => 1 << 32,
         _ => 0 << 32,
     }
@@ -516,16 +525,26 @@ fn simplify_exp(lhs: Node, rhs: Node) -> Result<SimplifySuccess, SimplifyError> 
     let lhs = tmp.result;
     did_something |= tmp.did_something;
 
-    if let Node::Num { val: lhs_val, input_base: lhs_input_base } = &lhs {
-        if let Node::Num { val: rhs_val, input_base: rhs_input_base } = &rhs {
+    if let Node::Num {
+        val: lhs_val,
+        input_base: lhs_input_base,
+    } = &lhs
+    {
+        if let Node::Num {
+            val: rhs_val,
+            input_base: rhs_input_base,
+        } = &rhs
+        {
             // actually try compute the exponent's result
             match simplify_exp_nums(lhs_val, rhs_val, *lhs_input_base, *rhs_input_base) {
-                Some(Ok(simplified_node)) => return Ok(SimplifySuccess {
-                    result: simplified_node,
-                    did_something: true,
-                }),
+                Some(Ok(simplified_node)) => {
+                    return Ok(SimplifySuccess {
+                        result: simplified_node,
+                        did_something: true,
+                    })
+                }
                 Some(Err(err)) => return Err(err),
-                None => {},
+                None => {}
             }
         }
         if lhs_val.is_one() {
@@ -544,18 +563,19 @@ fn simplify_exp(lhs: Node, rhs: Node) -> Result<SimplifySuccess, SimplifyError> 
             });
         } else if ratio_to_i32(&rhs_val) == Some(-1) {
             // (a/b)^-1 = b/a
-            if let Node::Num { val: lhs_val, input_base: lhs_input_base } = &lhs {
+            if let Node::Num {
+                val: lhs_val,
+                input_base: lhs_input_base,
+            } = &lhs
+            {
                 let inverse = Node::Num {
-                    val: BigRational::new(
-                        lhs_val.denom().clone(),
-                        lhs_val.numer().clone(),
-                    ),
+                    val: BigRational::new(lhs_val.denom().clone(), lhs_val.numer().clone()),
                     input_base: *lhs_input_base,
                 };
                 return Ok(SimplifySuccess {
                     result: inverse,
                     did_something: true,
-                })
+                });
             }
         } else if rhs_val.is_zero() {
             if let Node::Const(_) = &lhs {
@@ -587,7 +607,12 @@ fn simplify_exp(lhs: Node, rhs: Node) -> Result<SimplifySuccess, SimplifyError> 
     })
 }
 
-fn simplify_exp_nums(lhs: &BigRational, rhs: &BigRational, lhs_base: Option<u32>, rhs_base: Option<u32>) -> Option<Result<Node, SimplifyError>> {
+fn simplify_exp_nums(
+    lhs: &BigRational,
+    rhs: &BigRational,
+    lhs_base: Option<u32>,
+    rhs_base: Option<u32>,
+) -> Option<Result<Node, SimplifyError>> {
     if lhs.is_zero() {
         if rhs.is_positive() {
             // 0^x = 0 when x > 0
@@ -616,10 +641,7 @@ fn simplify_exp_nums(lhs: &BigRational, rhs: &BigRational, lhs_base: Option<u32>
             // this is handled in another match arm
             assert_ne!(expon, 0);
             if expon > 0 {
-                BigRational::new(
-                    a.numer().pow(expon as u32),
-                    a.denom().pow(expon as u32),
-                )
+                BigRational::new(a.numer().pow(expon as u32), a.denom().pow(expon as u32))
             } else {
                 let pos_expon = expon.abs();
                 BigRational::new(
@@ -723,10 +745,13 @@ mod tests {
             deep_flatten_children(
                 vec![
                     Node::Const(ConstKind::Pi),
-                    Node::Const(ConstKind::E) + Node::UnknownConst("hello".to_string()) + Node::Const(ConstKind::Tau),
+                    Node::Const(ConstKind::E)
+                        + Node::UnknownConst("hello".to_string())
+                        + Node::Const(ConstKind::Tau),
                 ],
                 true
-            ).0,
+            )
+            .0,
             vec![
                 Node::Const(ConstKind::Pi),
                 Node::Const(ConstKind::E),
@@ -770,7 +795,8 @@ mod tests {
                     .inverse()
                 )
             ))
-            .unwrap().result,
+            .unwrap()
+            .result,
             Node::Num {
                 val: BigRational::from_integer(4.into()),
                 input_base: Some(8),
@@ -785,7 +811,10 @@ mod tests {
         // TODO: we can't just compare for equality for now because the terms
         //  do not have a deterministic order yet
         let ok = match simplify((a.clone() + b.clone()).sqr()) {
-            Ok(SimplifySuccess { result: Node::Sum(_), .. }) => true,
+            Ok(SimplifySuccess {
+                result: Node::Sum(_),
+                ..
+            }) => true,
             _ => false,
         };
         assert!(ok);

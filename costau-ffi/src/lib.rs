@@ -1,6 +1,6 @@
 use costau_core::lexer::{Lexer, Token};
-use costau_core::parser::Parser;
 use costau_core::node::Node;
+use costau_core::parser::Parser;
 use num_traits::One;
 use std::ffi::CStr;
 use std::mem;
@@ -33,7 +33,10 @@ unsafe fn alloc_csharp_str(s: &str) -> *mut c_char {
     // create string for consumption on C# side
     let chars_with_nul = char_count + 1;
     let bytes = chars_with_nul * mem::size_of::<c_char>();
-    let out = slice::from_raw_parts_mut(winapi::um::combaseapi::CoTaskMemAlloc(bytes) as *mut c_char, chars_with_nul);
+    let out = slice::from_raw_parts_mut(
+        winapi::um::combaseapi::CoTaskMemAlloc(bytes) as *mut c_char,
+        chars_with_nul,
+    );
 
     // fill string
     let mut in_bytes = s.bytes();
@@ -52,7 +55,9 @@ unsafe fn alloc_csharp_str(s: &str) -> *mut c_char {
 #[no_mangle]
 pub unsafe extern "C" fn costau_evalresult_get_approx(r: *mut EvalResult) -> *mut c_char {
     match &*r {
-        Ok(EvalSuccess { approx: Some(s), .. }) => alloc_csharp_str(&s),
+        Ok(EvalSuccess {
+            approx: Some(s), ..
+        }) => alloc_csharp_str(&s),
         _ => ptr::null_mut(),
     }
 }
@@ -60,7 +65,10 @@ pub unsafe extern "C" fn costau_evalresult_get_approx(r: *mut EvalResult) -> *mu
 #[no_mangle]
 pub unsafe extern "C" fn costau_evalresult_get_simplified_expr(r: *mut EvalResult) -> *mut c_char {
     match &*r {
-        Ok(EvalSuccess { simplified_expr: Some(s), .. }) => alloc_csharp_str(&s),
+        Ok(EvalSuccess {
+            simplified_expr: Some(s),
+            ..
+        }) => alloc_csharp_str(&s),
         _ => ptr::null_mut(),
     }
 }
@@ -98,8 +106,7 @@ pub unsafe extern "C" fn costau_eval(expr: *const c_char) -> *mut EvalResult {
         true
     };
     let approx = if needs_approx {
-        simplified_expr.eval().ok()
-            .map(|x| x.val.to_string())
+        simplified_expr.eval().ok().map(|x| x.val.to_string())
     } else {
         None
     };

@@ -228,15 +228,12 @@ mod tests {
 
         let one = Node::Num {
             val: One::one(),
-            input_base: Some(10)
+            input_base: Some(10),
         };
         let two = Node::Num {
             val: BigRational::from_integer(2.into()),
-            input_base: Some(10)
+            input_base: Some(10),
         };
-        assert_eq!(
-            root_node,
-            one / (two * Node::Const(ConstKind::Pi))
-        );
+        assert_eq!(root_node, one / (two * Node::Const(ConstKind::Pi)));
     }
 }
