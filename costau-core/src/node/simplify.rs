@@ -195,7 +195,7 @@ where I: Iterator<Item = Node>,
     if let Some(last) = acc {
         // check if the number is the identity for the operation
         if (is_sum && !last.is_zero()) || (!is_sum && !last.is_one()) {
-            result.push(Node::Num {
+            result.insert(0, Node::Num {
                 val: last,
                 input_base: acc_base,
             });
