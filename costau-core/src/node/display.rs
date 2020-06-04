@@ -170,6 +170,8 @@ impl Display for Node {
                         }
                     }
                     write_with_paren(f, child, get_node_priority(self), true, false)?;
+
+                    previous_was_int = false;
                     if let Node::Num { val, .. } = &child {
                         if val.is_integer() {
                             previous_was_int = true;
