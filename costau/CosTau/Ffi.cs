@@ -21,7 +21,7 @@ namespace CosTau
         [DllImport("costau_ffi.dll", EntryPoint = "costau_eval", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         private static extern IntPtr Native_Eval(string expression);
 
-        public struct EvalResult
+        public class EvalResult
         {
             public string Approximation;
             public string SimplifiedExpression;

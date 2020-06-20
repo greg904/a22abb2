@@ -100,6 +100,7 @@ namespace CosTau
             }
         }
 
+        // for `EvalUnlessCalledAgainBeforeStarted`
         private CancellationTokenSource _cancellationTokenSource;
 
         public CalculationViewModel()
@@ -123,35 +124,11 @@ namespace CosTau
                 this.IsEmpty = false;
             }
 
-            if (_cancellationTokenSource != null)
+            var evalResult = await EvalUnlessCalledAgainBeforeStarted(exprTrim);
+            if (evalResult == null)
             {
-                // Cancel previous eval because we do not care about it anymore
-                // now that we have a new expression to evaluate.
-                _cancellationTokenSource.Cancel();
-            }
-
-            _cancellationTokenSource = new CancellationTokenSource();
-
-            Ffi.EvalResult evalResult;
-
-            try
-            {
-                var myToken = _cancellationTokenSource.Token;
-                evalResult = await Task.Run(() =>
-                {
-                    myToken.ThrowIfCancellationRequested();
-                    return Ffi.Eval(exprTrim);
-                });
-            }
-            catch (OperationCanceledException)
-            {
-                // a newer expression is being evaluated
+                // we have a new expression that we're trying to evaluate
                 return;
-            }
-            catch (Exception)
-            {
-                // display failure
-                evalResult = new Ffi.EvalResult(null, null, true);
             }
 
             if (evalResult.HasFailed)
@@ -179,6 +156,38 @@ namespace CosTau
             else
             {
                 this.ResultVisibility = Visibility.Collapsed;
+            }
+        }
+
+        private async Task<Ffi.EvalResult> EvalUnlessCalledAgainBeforeStarted(string expression)
+        {
+            if (_cancellationTokenSource != null)
+            {
+                // Cancel previous eval because we do not care about it anymore
+                // now that we have a new expression to evaluate.
+                _cancellationTokenSource.Cancel();
+            }
+
+            _cancellationTokenSource = new CancellationTokenSource();
+
+            try
+            {
+                var myToken = _cancellationTokenSource.Token;
+                return await Task.Run(() =>
+                {
+                    myToken.ThrowIfCancellationRequested();
+                    return Ffi.Eval(expression);
+                });
+            }
+            catch (OperationCanceledException)
+            {
+                // a newer expression is being evaluated
+                return null;
+            }
+            catch (Exception)
+            {
+                // display failure
+                return new Ffi.EvalResult(null, null, true);
             }
         }
 
