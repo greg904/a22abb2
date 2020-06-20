@@ -624,7 +624,7 @@ fn simplify_exp_nums(
     if rhs.is_zero() {
         return Some(Ok(common::one()));
     }
-    fn is_pow_safe(lhs_bits: usize, expon: i32) -> bool {
+    fn is_pow_safe(lhs_bits: u64, expon: i32) -> bool {
         // heuristic to prevent extremely big numbers
         u32::try_from(lhs_bits)
             .ok()
@@ -648,12 +648,13 @@ fn simplify_exp_nums(
                 )
             }
         }
-        let lhs_bits = lhs.denom().bits() + lhs.numer().bits();
-        if is_pow_safe(lhs_bits, int_expon) {
-            return Some(Ok(Node::Num {
-                val: my_pow(&lhs, int_expon),
-                input_base: get_op_result_base(lhs_base, rhs_base),
-            }));
+        if let Some(lhs_bits) = lhs.denom().bits().checked_add(lhs.numer().bits()) {
+            if is_pow_safe(lhs_bits, int_expon) {
+                return Some(Ok(Node::Num {
+                    val: my_pow(&lhs, int_expon),
+                    input_base: get_op_result_base(lhs_base, rhs_base),
+                }));
+            }
         }
     } else {
         let lhs = if lhs.denom().is_one() {
@@ -687,7 +688,7 @@ fn simplify_exp_nums(
                 // won't simplify.
                 let result = lhs.nth_root(root_u32);
                 if is_pow_safe(result.bits(), root) {
-                    let result_undo = result.pow(root_u32);
+                    let result_undo = result.clone().pow(root_u32);
                     if result_undo == lhs {
                         // see comment above about x^(-1/n)
                         let result = if rhs_inv.is_negative() {
