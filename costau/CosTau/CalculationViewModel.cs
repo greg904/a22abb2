@@ -1,6 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 using Windows.ApplicationModel.Resources;
 using Windows.UI.Xaml;
 
@@ -97,12 +100,14 @@ namespace CosTau
             }
         }
 
+        private CancellationTokenSource _cancellationTokenSource;
+
         public CalculationViewModel()
         {
             this.Update();
         }
 
-        private void Update()
+        private async void Update()
         {
             var exprTrim = this.expression.Trim();
             if (exprTrim == "")
@@ -118,8 +123,37 @@ namespace CosTau
                 this.IsEmpty = false;
             }
 
-            // TODO: do not call this on the UI thread
-            var evalResult = Ffi.Eval(exprTrim);
+            if (_cancellationTokenSource != null)
+            {
+                // Cancel previous eval because we do not care about it anymore
+                // now that we have a new expression to evaluate.
+                _cancellationTokenSource.Cancel();
+            }
+
+            _cancellationTokenSource = new CancellationTokenSource();
+
+            Ffi.EvalResult evalResult;
+
+            try
+            {
+                var myToken = _cancellationTokenSource.Token;
+                evalResult = await Task.Run(() =>
+                {
+                    myToken.ThrowIfCancellationRequested();
+                    return Ffi.Eval(exprTrim);
+                });
+            }
+            catch (OperationCanceledException)
+            {
+                // a newer expression is being evaluated
+                return;
+            }
+            catch (Exception)
+            {
+                // display failure
+                evalResult = new Ffi.EvalResult(null, null, true);
+            }
+
             if (evalResult.HasFailed)
             {
                 this.ResultText = ResourceLoader.GetForCurrentView().GetString("CalculationFailedText");
